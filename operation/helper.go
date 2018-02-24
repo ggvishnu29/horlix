@@ -1,0 +1,18 @@
+package operation
+
+import (
+	"time"
+
+	"github.com/ggvishnu29/horlix/model"
+
+	"github.com/satori/go.uuid"
+)
+
+func BumpUpVersion(msg *model.Msg) {
+	msg.Data.Version = time.Now().Unix()
+}
+
+func GenerateReceiptID() (string, error) {
+	uuid, err := uuid.NewV4()
+	return uuid.String(), err
+}
