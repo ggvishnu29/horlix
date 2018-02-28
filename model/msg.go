@@ -15,13 +15,13 @@ const defaultReserveTimeoutInSec = 10
 
 // Msg struct defines the structure of the msg that is enqueued/dequeued
 type Msg struct {
-	ID                  string
-	Tube                *Tube
-	Data                *Data
-	ReserveTimeoutInSec int64
-	Metadata            *MsgMetaData
-	WaitingData         *Data
-	ReceiptID           string
+	ID          string
+	Tube        *Tube
+	Data        *Data
+	Metadata    *MsgMetaData
+	WaitingData *Data
+	ReceiptID   string
+	IsDeleted   bool
 }
 
 type Data struct {
@@ -32,9 +32,10 @@ type Data struct {
 }
 
 type MsgMetaData struct {
-	State             int
-	ReservedTimestamp *time.Time
-	DelayedTimestamp  *time.Time
+	State                  int
+	ReservedTimestamp      *time.Time
+	DelayedTimestamp       *time.Time
+	FirstEnqueuedTimestamp *time.Time
 }
 
 func NewData(data []byte, priority int, delayInSec int64) *Data {
@@ -46,19 +47,22 @@ func NewData(data []byte, priority int, delayInSec int64) *Data {
 	}
 }
 
-func NewMsg(id string, dataBytes []byte, delayInSec int64, reserveTimeoutInSec int64, priority int, tube *Tube) *Msg {
+func NewMsg(id string, dataBytes []byte, delayInSec int64, priority int, tube *Tube) *Msg {
 	var dataSlice [][]byte
 	dataSlice = append(dataSlice, dataBytes)
 	var msgMetaData *MsgMetaData
+	now := time.Now()
 	if delayInSec > 0 {
 		delayedTimestamp := time.Now().Add(time.Duration(delayInSec) * time.Second)
 		msgMetaData = &MsgMetaData{
-			State:            DELAYED_MSG_STATE,
-			DelayedTimestamp: &delayedTimestamp,
+			State:                  DELAYED_MSG_STATE,
+			DelayedTimestamp:       &delayedTimestamp,
+			FirstEnqueuedTimestamp: &now,
 		}
 	} else {
 		msgMetaData = &MsgMetaData{
 			State: READY_MSG_STATE,
+			FirstEnqueuedTimestamp: &now,
 		}
 	}
 	data := &Data{
@@ -68,11 +72,10 @@ func NewMsg(id string, dataBytes []byte, delayInSec int64, reserveTimeoutInSec i
 		DataSlice:  dataSlice,
 	}
 	msg := &Msg{
-		ID:                  id,
-		ReserveTimeoutInSec: reserveTimeoutInSec,
-		Metadata:            msgMetaData,
-		Tube:                tube,
-		Data:                data,
+		ID:       id,
+		Metadata: msgMetaData,
+		Tube:     tube,
+		Data:     data,
 	}
 	return msg
 }

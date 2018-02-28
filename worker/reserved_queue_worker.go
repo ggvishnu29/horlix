@@ -9,25 +9,36 @@ import (
 
 func StartReservedQueueWorker(tube *model.Tube) error {
 	for !tube.IsDeleted {
-		qMsg := tube.ReservedQueue.Dequeue()
-		if qMsg == nil {
-			time.Sleep(1 * time.Second)
-			continue
-		}
-		msg := qMsg.Msg
-		if msg.Data.Version != qMsg.Version {
-			continue
-		}
-		if time.Now().Sub(*msg.Metadata.ReservedTimestamp) >= 0 {
-			processReservedQMsg(tube, msg)
-		} else {
-			time.Sleep(1 * time.Second)
-			continue
+		if err := processReservedQMsg(tube); err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
-func processReservedQMsg(tube *model.Tube, msg *model.Msg) {
+func processReservedQMsg(tube *model.Tube) error {
+	tube.Lock.Lock()
+	qMsg := tube.ReservedQueue.Peek()
+	if qMsg == nil {
+		tube.Lock.UnLock()
+		time.Sleep(1 * time.Second)
+		return nil
+	}
+	msg := qMsg.Msg
+	if msg.Data.Version != qMsg.Version || msg.IsDeleted {
+		tube.Lock.UnLock()
+		return nil
+	}
+	if time.Now().Sub(*msg.Metadata.ReservedTimestamp) >= 0 {
+		qMsg = tube.ReservedQueue.Dequeue()
+		fuseReservedQMsg(tube, msg)
+	} else {
+		time.Sleep(1 * time.Second)
+	}
+	tube.Lock.UnLock()
+	return nil
+}
+
+func fuseReservedQMsg(tube *model.Tube, msg *model.Msg) {
 	operation.FuseWaitingDataWithData(msg)
 }

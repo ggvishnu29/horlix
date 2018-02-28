@@ -1,17 +1,63 @@
-package cmd
+package main
 
 import (
+	"encoding/json"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/ggvishnu29/horlix/logger"
+	"github.com/ggvishnu29/horlix/model"
+	"github.com/ggvishnu29/horlix/operation"
 	"github.com/ggvishnu29/horlix/worker"
 )
 
 func main() {
+	logger.Init()
+	logger.LogInfo("starting horlix")
 	// start http process here
-	worker.StartTubesManager()
+	go worker.StartTubesManager()
+	logger.LogInfo("started horlix")
+	go testHorlix()
 	signalCatcher()
+}
+
+func testHorlix() {
+	fuseSetting := model.NewFuseSetting(1)
+	operation.CreateTube("tube1", 10, fuseSetting)
+	go enqueueMsgs()
+	for true {
+		msg, err := operation.GetMsg("tube1")
+		if err != nil {
+			panic(err)
+		}
+		if msg == nil {
+			logger.LogInfo("no msg in the queue")
+			continue
+		}
+		b, _ := json.Marshal(msg)
+		logger.LogInfof("msg: %v\n", string(b))
+		operation.DeleteMsg(msg.Tube.ID, msg.ID)
+		//time.Sleep(1 * time.Second)
+	}
+}
+
+func enqueueMsgs() {
+	for true {
+		err := operation.PutMsg("tube1", "msg1", []byte("hello"), 1, 0)
+		if err != nil {
+			panic(err)
+		}
+		err = operation.PutMsg("tube1", "msg2", []byte("world"), 1, 0)
+		if err != nil {
+			panic(err)
+		}
+		err = operation.PutMsg("tube1", "msg1", []byte("world"), 1, 0)
+		if err != nil {
+			panic(err)
+		}
+		//time.Sleep(3 * time.Second)
+	}
 }
 
 func signalCatcher() {

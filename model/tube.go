@@ -34,7 +34,7 @@ type FuseSetting struct {
 	Data int
 }
 
-func NewFuseSetting(delay, priority, data int) *FuseSetting {
+func NewFuseSetting(data int) *FuseSetting {
 	return &FuseSetting{
 		Data: data,
 	}

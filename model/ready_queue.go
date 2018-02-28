@@ -10,7 +10,9 @@ type ReadyQueue struct {
 
 func (r *ReadyQueue) Enqueue(qMsg *QMsg) {
 	r.qMsgs = append(r.qMsgs, qMsg)
-	sort.Slice(r.qMsgs, func(i, j int) bool { return r.qMsgs[i].Msg.Data.Priority > r.qMsgs[j].Msg.Data.Priority })
+	sort.Slice(r.qMsgs, func(i, j int) bool {
+		return (r.qMsgs[i].Msg.Data.Priority > r.qMsgs[j].Msg.Data.Priority || (r.qMsgs[i].Msg.Data.Priority == r.qMsgs[j].Msg.Data.Priority && r.qMsgs[i].Msg.Metadata.FirstEnqueuedTimestamp.After(*r.qMsgs[j].Msg.Metadata.FirstEnqueuedTimestamp)))
+	})
 }
 
 func (r *ReadyQueue) Dequeue() *QMsg {

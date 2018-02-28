@@ -7,7 +7,7 @@ import (
 	"github.com/ggvishnu29/horlix/model"
 )
 
-func PutMsg(tubeName string, msgID string, dataBytes []byte, priority int, delayInSec int64, reserveTimeoutInSec int64) error {
+func PutMsg(tubeName string, msgID string, dataBytes []byte, priority int, delayInSec int64) error {
 	tubeMap := model.GetTubeMap()
 	tubeMap.Lock()
 	defer tubeMap.Unlock()
@@ -19,7 +19,7 @@ func PutMsg(tubeName string, msgID string, dataBytes []byte, priority int, delay
 	defer tube.Lock.UnLock()
 	msg := tube.MsgMap.Get(msgID)
 	if msg == nil {
-		msg = model.NewMsg(msgID, dataBytes, delayInSec, reserveTimeoutInSec, priority, tube)
+		msg = model.NewMsg(msgID, dataBytes, delayInSec, priority, tube)
 		tube.MsgMap.AddOrUpdate(msg)
 		if delayInSec <= 0 {
 			msg.Metadata.State = model.READY_MSG_STATE
@@ -65,7 +65,7 @@ func GetMsg(tubeName string) (*model.Msg, error) {
 			return nil, nil
 		}
 		msg := qMsg.Msg
-		if msg.Data.Version != qMsg.Version || msg.Metadata.State != model.READY_MSG_STATE {
+		if msg.Data.Version != qMsg.Version || msg.Metadata.State != model.READY_MSG_STATE || msg.IsDeleted {
 			continue
 		}
 		msg.Metadata.State = model.RESERVED_MSG_STATE
@@ -123,6 +123,7 @@ func DeleteMsg(tubeName string, msgID string) error {
 	if msg == nil {
 		return fmt.Errorf("no msg in the tube with the id")
 	}
+	msg.IsDeleted = true
 	tube.MsgMap.Delete(msg)
 	return nil
 }

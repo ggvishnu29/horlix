@@ -29,7 +29,7 @@ func DeleteTube(tubeName string) error {
 	if tube == nil {
 		return fmt.Errorf("tube not found")
 	}
-	tubeMap.DeleteTube(tube)
 	tube.IsDeleted = true
+	tubeMap.DeleteTube(tube)
 	return nil
 }
