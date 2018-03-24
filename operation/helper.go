@@ -9,10 +9,10 @@ import (
 )
 
 func BumpUpVersion(msg *model.Msg) {
-	msg.Data.Version = time.Now().Unix()
+	msg.Data.Version = time.Now().UnixNano()
 }
 
 func GenerateReceiptID() (string, error) {
-	uuid, err := uuid.NewV4()
-	return uuid.String(), err
+	uuid := uuid.NewV4()
+	return uuid.String(), nil
 }

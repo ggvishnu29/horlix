@@ -26,16 +26,18 @@ func processReservedQMsg(tube *model.Tube) error {
 	}
 	msg := qMsg.Msg
 	if msg.Data.Version != qMsg.Version || msg.IsDeleted {
+		tube.ReservedQueue.Dequeue()
 		tube.Lock.UnLock()
 		return nil
 	}
 	if time.Now().Sub(*msg.Metadata.ReservedTimestamp) >= 0 {
 		qMsg = tube.ReservedQueue.Dequeue()
 		fuseReservedQMsg(tube, msg)
+		tube.Lock.UnLock()
 	} else {
+		tube.Lock.UnLock()
 		time.Sleep(1 * time.Second)
 	}
-	tube.Lock.UnLock()
 	return nil
 }
 

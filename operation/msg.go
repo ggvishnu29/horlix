@@ -1,6 +1,7 @@
 package operation
 
 import (
+	//"github.com/ggvishnu29/horlix/logger"
 	"fmt"
 	"time"
 
@@ -42,6 +43,7 @@ func PutMsg(tubeName string, msgID string, dataBytes []byte, priority int, delay
 	case model.RESERVED_MSG_STATE:
 		FuseWaitingData(data, msg)
 	case model.DELAYED_MSG_STATE:
+		//logger.LogInfo("fusing delayed data")
 		FuseDelayedData(data, msg)
 	default:
 		return fmt.Errorf("unknown state for msg: %v", state)

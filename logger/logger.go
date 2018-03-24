@@ -24,5 +24,5 @@ func LogInfo(msg string) {
 }
 
 func LogInfof(format string, a ...interface{}) {
-	fmt.Printf(format, a)
+	fmt.Printf(format, a...)
 }

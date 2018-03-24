@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/ggvishnu29/horlix/model"
+	//"github.com/ggvishnu29/horlix/logger"
 )
 
 func FuseReadyData(data *model.Data, msg *model.Msg) {
@@ -29,12 +30,21 @@ func FuseReadyData(data *model.Data, msg *model.Msg) {
 
 func FuseDelayedData(data *model.Data, msg *model.Msg) {
 	if msg.Tube.FuseSetting.Data == model.REPLACE_DATA || msg.Data == nil {
-		msg.Data = data
+		msg.Data.DataSlice = data.DataSlice
+		msg.Data.Priority = data.Priority
+		msg.Data.DelayInSec = data.DelayInSec
 	} else {
 		previousDataSlice := msg.Data.DataSlice
-		msg.Data = data
+		msg.Data.DelayInSec = data.DelayInSec
+		msg.Data.Priority = data.Priority
 		msg.Data.DataSlice = append(previousDataSlice, data.DataSlice...)
+		//logger.LogInfof("delayed timestamp: %v\n", msg.Metadata.DelayedTimestamp)
 	}
+
+	// BumpUpVersion(msg)
+	// qMsg := model.NewQMsg(msg)
+	// msg.Tube.DelayedQueue.Enqueue(qMsg)
+
 	// bumpUpVersion(msg)
 	// if msg.Data.DelayInSec > 0 {
 	// 	delayedTimestamp := time.Now().Add(time.Duration(msg.Data.DelayInSec) * time.Second)
@@ -77,7 +87,8 @@ func FuseWaitingDataWithData(msg *model.Msg) {
 		}
 	}
 	BumpUpVersion(msg)
-	if msg.Data.DelayInSec > 0 {
+	if (msg.Data.DelayInSec > 0) {
+		msg.Metadata.State = model.DELAYED_MSG_STATE
 		delayedTimestamp := time.Now().Add(time.Duration(msg.Data.DelayInSec) * time.Second)
 		msg.Metadata.DelayedTimestamp = &delayedTimestamp
 		qMsg := model.NewQMsg(msg)
