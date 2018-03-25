@@ -36,7 +36,7 @@ func (r *ReservedQueue) Dequeue() *QMsg {
 	if len(r.qMsgs) == 1 {
 		r.qMsgs = make([]*QMsg, 0)
 	} else {
-		r.qMsgs = r.qMsgs[1 : len(r.qMsgs) - 1]
+		r.qMsgs = r.qMsgs[1:]
 	}
 	return qMsg
 }

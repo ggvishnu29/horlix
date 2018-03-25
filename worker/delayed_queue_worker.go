@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"github.com/ggvishnu29/horlix/logger"
 	"time"
 
 	"github.com/ggvishnu29/horlix/model"
@@ -19,17 +18,22 @@ func StartDelayedQueueWorker(tube *model.Tube) error {
 
 func processDelayedQMsg(tube *model.Tube) error {
 	tube.Lock.Lock()
-	logger.LogInfo("processing delayed msg")
+	//logger.LogInfo("processing delayed msg")
+	// logger.LogInfo("before processing")
+	// tube.DelayedQueue.Print()
+	// defer tube.DelayedQueue.Print()
+	// defer logger.LogInfo("after processing")
 	qMsg := tube.DelayedQueue.Peek()
 	if qMsg == nil {
-		logger.LogInfo("queue msg nil")
+		//logger.LogInfo("queue msg nil")
 		tube.Lock.UnLock()
 		time.Sleep(1 * time.Second)
 		return nil
 	}
 	msg := qMsg.Msg
-	if msg.Data.Version != qMsg.Version || msg.IsDeleted {
-		logger.LogInfo("queue msg version not matching")
+	//logger.LogInfof("processing delayed msg: %v\n", msg.ID)
+	if msg.Data == nil || msg.Data.Version != qMsg.Version || msg.IsDeleted {
+		//logger.LogInfo("queue msg version not matching")
 		tube.DelayedQueue.Dequeue()
 		tube.Lock.UnLock()
 		return nil
@@ -37,7 +41,7 @@ func processDelayedQMsg(tube *model.Tube) error {
 	//logger.LogInfo("test0")
 	//logger.LogInfof("processing delayed msg: %v\n", *msg.Metadata.DelayedTimestamp)
 	if time.Now().Sub(*msg.Metadata.DelayedTimestamp) >= 0 {
-		logger.LogInfo("making delayed msg ready")
+		//logger.LogInfo("making delayed msg ready")
 		//logger.LogInfo("inside if")
 		qMsg = tube.DelayedQueue.Dequeue()
 		//logger.LogInfo("test1")
@@ -53,9 +57,9 @@ func processDelayedQMsg(tube *model.Tube) error {
 }
 
 func moveQMsgToReadyQ(tube *model.Tube, msg *model.Msg) {
-	logger.LogInfof("version before: %v\n", msg.Data.Version)
+	//logger.LogInfof("version before: %v\n", msg.Data.Version)
 	operation.BumpUpVersion(msg)
-	logger.LogInfof("version after: %v\n", msg.Data.Version)
+	//logger.LogInfof("version after: %v\n", msg.Data.Version)
 	msg.Metadata.State = model.READY_MSG_STATE
 	msg.Metadata.DelayedTimestamp = nil
 	qMsg := model.NewQMsg(msg)

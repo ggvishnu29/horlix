@@ -5,6 +5,7 @@ import (
 	//"encoding/json"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	"github.com/ggvishnu29/horlix/logger"
@@ -41,10 +42,11 @@ func testHorlix() {
 		if msg == nil {
 			continue
 		}
-		logger.LogInfo("dequeued msg")
+		logger.LogInfof("dequeued %v, msg slice size: %v\n", msg.ID, len(msg.Data.DataSlice))
 		//b, _ := json.Marshal(msg)
 		//logger.LogInfof("msg: %v\n", string(b))
-		err = operation.DeleteMsg(msg.Tube.ID, msg.ID)
+		err = operation.AckMsg(msg.Tube.ID, msg.ID, msg.ReceiptID)
+		//err = operation.DeleteMsg(msg.Tube.ID, msg.ID)
 		if err != nil {
 			panic(err)
 		}
@@ -65,17 +67,30 @@ func printStats() {
 		tube := model.GetTubeMap().GetTube("tube1")
 		logger.LogInfof("enqueue rate: %v dequeue rate: %v delete rate: %v\n", enqueueRate, dequeueRate, deleteRate)
 		logger.LogInfof("readyQSize: %v reservedQSize: %v delayedQSize: %v\n", tube.ReadyQueue.Size(), tube.ReservedQueue.Size(), tube.DelayedQueue.Size())
+		//logger.LogInfo("Delayed Queue:")
+		//tube.DelayedQueue.Print()
 	}
 }
 
 func enqueueMsgs() {
 	for true {
-		err := operation.PutMsg("tube1", "msg1", []byte("hello"), 1, 10)
-		if err != nil {
-			panic(err)
+		i := 1
+		for i <= 1000 {
+			msgID := "msg" + strconv.Itoa(i)
+			err := operation.PutMsg("tube1", msgID, []byte("hello"), 1, int64(i%10))
+			if err != nil {
+				panic(err)
+			}
+			time.Sleep(1 * time.Second)
+			i++
+			numEnqueues++
 		}
-		numEnqueues++
-		// err = operation.PutMsg("tube1", "msg2", []byte("world"), 1, 0)
+		// err := operation.PutMsg("tube1", "msg1", []byte("hello"), 1, 10)
+		// if err != nil {
+		// 	panic(err)
+		// }
+		// numEnqueues++
+		// err = operation.PutMsg("tube1", "msg2", []byte("world"), 1, 2)
 		// if err != nil {
 		// 	panic(err)
 		// }
@@ -115,5 +130,6 @@ func signalCatcher() {
 	select {
 	case <-sigs:
 	}
+	logger.LogInfo("exiting !!!!!!")
 	os.Exit(0)
 }

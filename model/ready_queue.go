@@ -15,7 +15,7 @@ func (r *ReadyQueue) Enqueue(qMsg *QMsg) {
 	r.qMsgs = append(r.qMsgs, qMsg)
 	// readyQEnqueueCount++
 	// if readyQEnqueueCount < 4 {
-	// 	return 
+	// 	return
 	// }
 	// //logger.LogInfof("ready queue length: %v\n", len(r.qMsgs))
 	// tempQ := make([]*QMsg, len(r.qMsgs))
@@ -39,7 +39,7 @@ func (r *ReadyQueue) Dequeue() *QMsg {
 	if len(r.qMsgs) == 1 {
 		r.qMsgs = make([]*QMsg, 0)
 	} else {
-		r.qMsgs = r.qMsgs[1 : len(r.qMsgs)-1]
+		r.qMsgs = r.qMsgs[1:]
 	}
 	return qMsg
 }

@@ -1,6 +1,7 @@
 package operation
 
 import (
+
 	//"github.com/ggvishnu29/horlix/logger"
 	"fmt"
 	"time"
@@ -107,7 +108,48 @@ func ReleaseMsg(tubeName string, msgID string, receiptID string, delayInSec int6
 	if msg.ReceiptID != receiptID {
 		return fmt.Errorf("receipt ID is not matching")
 	}
-	FuseWaitingDataWithData(msg)
+	FuseWaitingDataWithData(msg, delayInSec)
+	return nil
+}
+
+func AckMsg(tubeName string, msgID string, receiptID string) error {
+	tubeMap := model.GetTubeMap()
+	tubeMap.Lock()
+	defer tubeMap.Unlock()
+	tube := tubeMap.GetTube(tubeName)
+	if tube == nil {
+		return fmt.Errorf("tube not found")
+	}
+	tube.Lock.Lock()
+	defer tube.Lock.UnLock()
+	msg := tube.MsgMap.Get(msgID)
+	if msg == nil {
+		return fmt.Errorf("no msg in the tube with the id")
+	}
+	BumpUpVersion(msg)
+	if msg.WaitingData == nil {
+		//logger.LogInfo("msg waiting data is nil")
+		msg.IsDeleted = true
+		tube.MsgMap.Delete(msg)
+		return nil
+	}
+	msg.Data.DataSlice = msg.WaitingData.DataSlice
+	msg.Data.Priority = msg.WaitingData.Priority
+	msg.Data.DelayInSec = msg.WaitingData.DelayInSec
+	msg.WaitingData = nil
+	//logger.LogInfof("msg delayed timestamp: %v \n", msg.Metadata.DelayedTimestamp)
+	if msg.Metadata.DelayedTimestamp != nil && msg.Metadata.DelayedTimestamp.Sub(time.Now()) > 0 {
+		msg.Metadata.State = model.DELAYED_MSG_STATE
+		qMsg := model.NewQMsg(msg)
+		msg.Tube.DelayedQueue.Enqueue(qMsg)
+		//logger.LogInfo("enqueued to delayed queue")
+	} else {
+		msg.Metadata.State = model.READY_MSG_STATE
+		msg.Metadata.DelayedTimestamp = nil
+		qMsg := model.NewQMsg(msg)
+		msg.Tube.ReadyQueue.Enqueue(qMsg)
+		//logger.LogInfo("enqueued to ready queue")
+	}
 	return nil
 }
 

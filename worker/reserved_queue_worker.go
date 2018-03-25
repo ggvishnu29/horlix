@@ -18,6 +18,7 @@ func StartReservedQueueWorker(tube *model.Tube) error {
 
 func processReservedQMsg(tube *model.Tube) error {
 	tube.Lock.Lock()
+	//logger.LogInfo("processing reserved msg")
 	qMsg := tube.ReservedQueue.Peek()
 	if qMsg == nil {
 		tube.Lock.UnLock()
@@ -25,12 +26,13 @@ func processReservedQMsg(tube *model.Tube) error {
 		return nil
 	}
 	msg := qMsg.Msg
-	if msg.Data.Version != qMsg.Version || msg.IsDeleted {
+	if msg.Data == nil || msg.Data.Version != qMsg.Version || msg.IsDeleted {
 		tube.ReservedQueue.Dequeue()
 		tube.Lock.UnLock()
 		return nil
 	}
 	if time.Now().Sub(*msg.Metadata.ReservedTimestamp) >= 0 {
+		//logger.LogInfo("making reserved msg ready/delayed")
 		qMsg = tube.ReservedQueue.Dequeue()
 		fuseReservedQMsg(tube, msg)
 		tube.Lock.UnLock()
@@ -42,5 +44,6 @@ func processReservedQMsg(tube *model.Tube) error {
 }
 
 func fuseReservedQMsg(tube *model.Tube, msg *model.Msg) {
-	operation.FuseWaitingDataWithData(msg)
+	// putting back with delay as zero so that the msg becomes visible immediately
+	operation.FuseWaitingDataWithData(msg, 0)
 }

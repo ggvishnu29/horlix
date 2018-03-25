@@ -13,6 +13,6 @@ func BumpUpVersion(msg *model.Msg) {
 }
 
 func GenerateReceiptID() (string, error) {
-	uuid := uuid.NewV4()
+	uuid, _ := uuid.NewV4()
 	return uuid.String(), nil
 }
