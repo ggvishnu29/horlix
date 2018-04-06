@@ -89,7 +89,7 @@ func FuseWaitingDataWithData(msg *model.Msg, delayInSec int64) {
 	BumpUpVersion(msg)
 	if delayInSec > 0 {
 		msg.Metadata.State = model.DELAYED_MSG_STATE
-		delayedTimestamp := time.Now().Add(time.Duration(msg.Data.DelayInSec) * time.Second)
+		delayedTimestamp := time.Now().Add(time.Duration(delayInSec) * time.Second)
 		msg.Metadata.DelayedTimestamp = &delayedTimestamp
 		qMsg := model.NewQMsg(msg)
 		msg.Tube.DelayedQueue.Enqueue(qMsg)

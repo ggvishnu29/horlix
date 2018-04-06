@@ -2,27 +2,27 @@ package logger
 
 import (
 	"bufio"
-	"fmt"
 	"log"
 	"os"
 	"sync"
 )
 
-var logger *log.Logger
-var once sync.Once
+var aLogger *log.Logger
+var o1 sync.Once
 
-func Init() {
-	once.Do(func() {
+func InitAppLogger() {
+	o1.Do(func() {
 		buf := bufio.NewWriter(os.Stdout)
-		logger = log.New(buf, "horlix: ", log.Lshortfile)
+		aLogger = log.New(buf, "horlix: ", log.Lshortfile)
 	})
 }
 
 func LogInfo(msg string) {
-	logger.Println(msg)
-	fmt.Println(msg)
+	aLogger.Println(msg)
+	//fmt.Println(msg)
 }
 
 func LogInfof(format string, a ...interface{}) {
-	fmt.Printf(format, a...)
+	aLogger.Printf(format, a...)
+	//fmt.Printf(format, a...)
 }
