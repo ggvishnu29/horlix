@@ -1,9 +1,5 @@
 package model
 
-import (
-	"sort"
-)
-
 var reservedQEnqueueCount = 0
 
 type ReservedQueue struct {
@@ -21,10 +17,6 @@ func (r *ReservedQueue) Enqueue(qMsg *QMsg) {
 	// r.qMsgs = tempQ
 	// reservedQEnqueueCount = 0
 	// runtime.GC()
-
-	// sort.Slice(r.qMsgs, func(i, j int) bool {
-	// 	return r.qMsgs[i].Msg.Metadata.ReservedTimestamp.After(*r.qMsgs[j].Msg.Metadata.ReservedTimestamp)
-	// })
 }
 
 func (r *ReservedQueue) Dequeue() *QMsg {
@@ -47,12 +39,6 @@ func (r *ReservedQueue) Peek() *QMsg {
 	}
 	qMsg := r.qMsgs[0]
 	return qMsg
-}
-
-func (r *ReservedQueue) Reprioritize() {
-	sort.Slice(r.qMsgs, func(i, j int) bool {
-		return r.qMsgs[i].Msg.Metadata.ReservedTimestamp.After(*r.qMsgs[j].Msg.Metadata.ReservedTimestamp)
-	})
 }
 
 func (r *ReservedQueue) Size() int64 {

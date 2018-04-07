@@ -23,10 +23,6 @@ func (r *ReadyQueue) Enqueue(qMsg *QMsg) {
 	// r.qMsgs = tempQ
 	// readyQEnqueueCount = 0
 	// runtime.GC()
-
-	// sort.Slice(r.qMsgs, func(i, j int) bool {
-	// 	return (r.qMsgs[i].Msg.Data.Priority > r.qMsgs[j].Msg.Data.Priority || (r.qMsgs[i].Msg.Data.Priority == r.qMsgs[j].Msg.Data.Priority && r.qMsgs[i].Msg.Metadata.FirstEnqueuedTimestamp.After(*r.qMsgs[j].Msg.Metadata.FirstEnqueuedTimestamp)))
-	// })
 }
 
 func (r *ReadyQueue) Dequeue() *QMsg {
@@ -35,7 +31,6 @@ func (r *ReadyQueue) Dequeue() *QMsg {
 	}
 	qMsg := r.qMsgs[0]
 	r.qMsgs[0] = nil
-	//logger.LogInfof("queue length: %v\n", len(r.qMsgs))
 	if len(r.qMsgs) == 1 {
 		r.qMsgs = make([]*QMsg, 0)
 	} else {

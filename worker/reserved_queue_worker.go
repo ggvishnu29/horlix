@@ -18,7 +18,6 @@ func StartReservedQueueWorker(tube *model.Tube) error {
 
 func processReservedQMsg(tube *model.Tube) error {
 	tube.Lock.Lock()
-	//logger.LogInfo("processing reserved msg")
 	qMsg := tube.ReservedQueue.Peek()
 	if qMsg == nil {
 		tube.Lock.UnLock()
@@ -32,7 +31,6 @@ func processReservedQMsg(tube *model.Tube) error {
 		return nil
 	}
 	if time.Now().Sub(*msg.Metadata.ReservedTimestamp) >= 0 {
-		//logger.LogInfo("making reserved msg ready/delayed")
 		qMsg = tube.ReservedQueue.Dequeue()
 		fuseReservedQMsg(tube, msg)
 		tube.Lock.UnLock()

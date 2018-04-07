@@ -13,8 +13,6 @@ type DelayedQueue struct {
 }
 
 func (d *DelayedQueue) Enqueue(qMsg *QMsg) {
-	//logger.LogInfo("before enqueueing")
-	//d.Print()
 	d.qMsgs = append(d.qMsgs, qMsg)
 	// delayedQEnqueueCount++
 	// if delayedQEnqueueCount < 100000 {
@@ -38,13 +36,11 @@ func (d *DelayedQueue) Dequeue() *QMsg {
 	}
 	qMsg := d.qMsgs[0]
 	d.qMsgs[0] = nil
-	//logger.LogInfof("before size: %v", len(d.qMsgs))
 	if len(d.qMsgs) == 1 {
 		d.qMsgs = make([]*QMsg, 0)
 	} else {
 		d.qMsgs = d.qMsgs[1:]
 	}
-	//logger.LogInfof("after size: %v", len(d.qMsgs))
 	return qMsg
 }
 
@@ -58,7 +54,7 @@ func (d *DelayedQueue) Peek() *QMsg {
 
 func (d *DelayedQueue) Reprioritize() {
 	sort.Slice(d.qMsgs, func(i, j int) bool {
-		return d.qMsgs[i].Msg.Metadata.DelayedTimestamp.After(*d.qMsgs[j].Msg.Metadata.DelayedTimestamp)
+		return d.qMsgs[i].Msg.Metadata.DelayedTimestamp.Before(*d.qMsgs[j].Msg.Metadata.DelayedTimestamp)
 	})
 }
 

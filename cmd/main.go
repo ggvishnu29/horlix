@@ -2,6 +2,8 @@ package main
 
 import (
 	"time"
+
+	"github.com/ggvishnu29/horlix/contract"
 	//"encoding/json"
 	"os"
 	"os/signal"
@@ -23,22 +25,32 @@ var releaseCounter = 0
 var deleteCounter = 0
 
 func main() {
-	logger.AppLogger()
+	logger.InitAppLogger("/tmp")
+	logger.InitTransLogger("/tmp")
+	worker.InitSnapshotter("/tmp/horlix-snapshot")
 	logger.LogInfo("starting horlix")
 	// start http process here
 	go worker.StartTubesManager()
+	go worker.StartSnapshotter()
 	logger.LogInfo("started horlix")
 	go testHorlix()
 	signalCatcher()
 }
 
 func testHorlix() {
-	fuseSetting := model.NewFuseSetting(1)
-	operation.CreateTube("tube1", 10, fuseSetting)
+	req := &contract.CreateTubeRequest{
+		TubeName:            "tube1",
+		ReserveTimeoutInSec: 10,
+		DataFuseSetting:     1,
+	}
+	operation.CreateTube(req)
 	go enqueueMsgs()
 	go printStats()
 	for true {
-		msg, err := operation.GetMsg("tube1")
+		req := &contract.GetMsgRequest{
+			TubeName: "tube1",
+		}
+		msg, err := operation.GetMsg(req)
 		if err != nil {
 			panic(err)
 		}
@@ -50,22 +62,37 @@ func testHorlix() {
 		deleteCounter++
 		if releaseCounter == 10000 {
 			releaseCounter = 0
-			err = operation.ReleaseMsg(msg.Tube.ID, msg.ID, msg.ReceiptID, 5)
+			req := &contract.ReleaseMsgRequest{
+				TubeName:   msg.Tube.ID,
+				MsgID:      msg.ID,
+				ReceiptID:  msg.ReceiptID,
+				DelayInSec: 5,
+			}
+			err = operation.ReleaseMsg(req)
 			if err != nil {
 				panic(err)
 			}
 			numReleases++
 		} else {
-			err = operation.AckMsg(msg.Tube.ID, msg.ID, msg.ReceiptID)
+			req := &contract.AckMsgRequest{
+				TubeName:  msg.Tube.ID,
+				MsgID:     msg.ID,
+				ReceiptID: msg.ReceiptID,
+			}
+			err = operation.AckMsg(req)
 			if err != nil {
 				panic(err)
 			}
 			numAcks++
-			
+
 		}
 		if deleteCounter == 100000 {
 			deleteCounter = 0
-			err = operation.DeleteMsg(msg.Tube.ID, msg.ID)
+			req := &contract.DeleteMsgRequest{
+				TubeName: msg.Tube.ID,
+				MsgID:    msg.ID,
+			}
+			err = operation.DeleteMsg(req)
 			if err != nil {
 				panic(err)
 			}
@@ -115,7 +142,14 @@ func enqueueMsgs() {
 		// 	i++
 		// 	numEnqueues++
 		// }
-		err := operation.PutMsg("tube1", "msg1", []byte("hello"), 1, 0)
+		req := &contract.PutMsgRequest{
+			TubeName:   "tube1",
+			MsgID:      "msg1",
+			DataBytes:  []byte("hello"),
+			DelayInSec: 1,
+			Priority:   0,
+		}
+		err := operation.PutMsg(req)
 		if err != nil {
 			panic(err)
 		}
@@ -160,6 +194,9 @@ func signalCatcher() {
 	// signals and invokes shutdownServices()
 	select {
 	case <-sigs:
+		// taking snapshot before exiting
+		worker.TakeSnapshot()
+		logger.TruncateTransLog()
 	}
 	logger.LogInfo("exiting !!!!!!")
 	os.Exit(0)
