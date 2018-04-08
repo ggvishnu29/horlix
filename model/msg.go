@@ -16,7 +16,7 @@ const defaultReserveTimeoutInSec = 10
 // Msg struct defines the structure of the msg that is enqueued/dequeued
 type Msg struct {
 	ID          string
-	Tube        *Tube
+	TubeName    string
 	Data        *Data
 	Metadata    *MsgMetaData
 	WaitingData *Data
@@ -74,7 +74,7 @@ func NewMsg(id string, dataBytes []byte, delayInSec int64, priority int, tube *T
 	msg := &Msg{
 		ID:       id,
 		Metadata: msgMetaData,
-		Tube:     tube,
+		TubeName: tube.ID,
 		Data:     data,
 	}
 	return msg

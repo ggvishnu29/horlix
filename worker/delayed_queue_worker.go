@@ -25,7 +25,7 @@ func processDelayedQMsg(tube *model.Tube) error {
 		return nil
 	}
 	msg := qMsg.Msg
-	if msg.Data == nil || msg.Data.Version != qMsg.Version || msg.IsDeleted {
+	if msg.Data == nil || msg.Data.Version != qMsg.Version || msg.IsDeleted || msg.Metadata.State != model.DELAYED_MSG_STATE {
 		tube.DelayedQueue.Dequeue()
 		tube.Lock.UnLock()
 		return nil

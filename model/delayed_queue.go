@@ -9,11 +9,11 @@ import (
 var delayedQEnqueueCount = 0
 
 type DelayedQueue struct {
-	qMsgs []*QMsg
+	QMsgs []*QMsg
 }
 
 func (d *DelayedQueue) Enqueue(qMsg *QMsg) {
-	d.qMsgs = append(d.qMsgs, qMsg)
+	d.QMsgs = append(d.QMsgs, qMsg)
 	// delayedQEnqueueCount++
 	// if delayedQEnqueueCount < 100000 {
 	// 	return
@@ -22,8 +22,8 @@ func (d *DelayedQueue) Enqueue(qMsg *QMsg) {
 	// copy(tempQ, d.qMsgs)
 	// d.qMsgs = tempQ
 	// delayedQEnqueueCount = 0
-	sort.Slice(d.qMsgs, func(i, j int) bool {
-		return d.qMsgs[i].Msg.Metadata.DelayedTimestamp.Before(*d.qMsgs[j].Msg.Metadata.DelayedTimestamp)
+	sort.Slice(d.QMsgs, func(i, j int) bool {
+		return d.QMsgs[i].Msg.Metadata.DelayedTimestamp.Before(*d.QMsgs[j].Msg.Metadata.DelayedTimestamp)
 	})
 	//logger.LogInfo("after enqueueing")
 	//d.Print()
@@ -31,43 +31,43 @@ func (d *DelayedQueue) Enqueue(qMsg *QMsg) {
 }
 
 func (d *DelayedQueue) Dequeue() *QMsg {
-	if len(d.qMsgs) == 0 {
+	if len(d.QMsgs) == 0 {
 		return nil
 	}
-	qMsg := d.qMsgs[0]
-	d.qMsgs[0] = nil
-	if len(d.qMsgs) == 1 {
-		d.qMsgs = make([]*QMsg, 0)
+	qMsg := d.QMsgs[0]
+	d.QMsgs[0] = nil
+	if len(d.QMsgs) == 1 {
+		d.QMsgs = make([]*QMsg, 0)
 	} else {
-		d.qMsgs = d.qMsgs[1:]
+		d.QMsgs = d.QMsgs[1:]
 	}
 	return qMsg
 }
 
 func (d *DelayedQueue) Peek() *QMsg {
-	if len(d.qMsgs) == 0 {
+	if len(d.QMsgs) == 0 {
 		return nil
 	}
-	qMsg := d.qMsgs[0]
+	qMsg := d.QMsgs[0]
 	return qMsg
 }
 
 func (d *DelayedQueue) Reprioritize() {
-	sort.Slice(d.qMsgs, func(i, j int) bool {
-		return d.qMsgs[i].Msg.Metadata.DelayedTimestamp.Before(*d.qMsgs[j].Msg.Metadata.DelayedTimestamp)
+	sort.Slice(d.QMsgs, func(i, j int) bool {
+		return d.QMsgs[i].Msg.Metadata.DelayedTimestamp.Before(*d.QMsgs[j].Msg.Metadata.DelayedTimestamp)
 	})
 }
 
 func (d *DelayedQueue) Size() int64 {
-	return int64(len(d.qMsgs))
+	return int64(len(d.QMsgs))
 }
 
 func (d *DelayedQueue) Capacity() int64 {
-	return int64(cap(d.qMsgs))
+	return int64(cap(d.QMsgs))
 }
 
 func (d *DelayedQueue) Print() {
-	for _, qMsg := range d.qMsgs {
+	for _, qMsg := range d.QMsgs {
 		logger.LogInfof("%v %v\n", qMsg.Msg.ID, qMsg.Msg.Metadata.DelayedTimestamp)
 	}
 }

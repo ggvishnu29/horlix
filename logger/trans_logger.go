@@ -4,14 +4,13 @@ import (
 	"bufio"
 	"log"
 	"os"
-	"sync"
 
 	"github.com/ggvishnu29/horlix/contract"
 )
 
 var transLog *os.File
 var tLogger *log.Logger
-var o2 sync.Once
+var tWriter *bufio.Writer
 
 func InitTransLogger(transLogDir string) error {
 	var err error
@@ -19,8 +18,9 @@ func InitTransLogger(transLogDir string) error {
 	if err != nil {
 		return err
 	}
-	buf := bufio.NewWriter(transLog)
-	tLogger = log.New(buf, "", log.Lshortfile)
+	// buf := bufio.NewWriter(transLog)
+	// tLogger = log.New(buf, "", log.Lshortfile)
+	tWriter = bufio.NewWriter(transLog)
 	return nil
 }
 
@@ -30,11 +30,13 @@ func TruncateTransLog() {
 }
 
 func LogTransaction(opr string, req contract.IRequestContract) error {
-	bytes, err := req.Serialize()
+	reqBytes, err := req.Serialize()
 	if err != nil {
 		return err
 	}
-	tLogger.Println(opr)
-	tLogger.Println(bytes)
+	reqString := string(reqBytes[:])
+	tWriter.WriteString(opr + "\n" + reqString + "\n")
+	// tLogger.Println(opr)
+	// tLogger.Println(bytes)
 	return nil
 }

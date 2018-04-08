@@ -3,14 +3,14 @@ package main
 import (
 	"time"
 
-	"github.com/ggvishnu29/horlix/contract"
-	//"encoding/json"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/ggvishnu29/horlix/logger"
+	"github.com/ggvishnu29/horlix/contract"
 	"github.com/ggvishnu29/horlix/model"
+
+	"github.com/ggvishnu29/horlix/logger"
 	"github.com/ggvishnu29/horlix/operation"
 	"github.com/ggvishnu29/horlix/worker"
 )
@@ -26,11 +26,17 @@ var deleteCounter = 0
 
 func main() {
 	logger.InitAppLogger("/tmp")
+	go worker.StartTubesManager()
+	worker.InitSnapshotter("/tmp")
+	if err := worker.RecoverFromTransLog(); err != nil {
+		panic(err)
+	}
+	//tube := model.TMap.GetTube("tube1")
+	//logger.LogInfof("readyQSize: %v reservedQSize: %v delayedQSize: %v\n", tube.ReadyQueue.Size(), tube.ReservedQueue.Size(), tube.DelayedQueue.Size())
+	//time.Sleep(10 * time.Second)
 	logger.InitTransLogger("/tmp")
-	worker.InitSnapshotter("/tmp/horlix-snapshot")
 	logger.LogInfo("starting horlix")
 	// start http process here
-	go worker.StartTubesManager()
 	go worker.StartSnapshotter()
 	logger.LogInfo("started horlix")
 	go testHorlix()
@@ -43,7 +49,9 @@ func testHorlix() {
 		ReserveTimeoutInSec: 10,
 		DataFuseSetting:     1,
 	}
-	operation.CreateTube(req)
+	if err := operation.CreateTube(req); err != nil {
+		//panic(err)
+	}
 	go enqueueMsgs()
 	go printStats()
 	for true {
@@ -58,12 +66,13 @@ func testHorlix() {
 		if msg == nil {
 			continue
 		}
+		logger.LogInfof("%v\n", msg.Data.DataSlice)
 		releaseCounter++
 		deleteCounter++
 		if releaseCounter == 10000 {
 			releaseCounter = 0
 			req := &contract.ReleaseMsgRequest{
-				TubeName:   msg.Tube.ID,
+				TubeName:   model.TMap.Tubes[msg.TubeName].ID,
 				MsgID:      msg.ID,
 				ReceiptID:  msg.ReceiptID,
 				DelayInSec: 5,
@@ -75,7 +84,7 @@ func testHorlix() {
 			numReleases++
 		} else {
 			req := &contract.AckMsgRequest{
-				TubeName:  msg.Tube.ID,
+				TubeName:  model.TMap.Tubes[msg.TubeName].ID,
 				MsgID:     msg.ID,
 				ReceiptID: msg.ReceiptID,
 			}
@@ -89,7 +98,7 @@ func testHorlix() {
 		if deleteCounter == 100000 {
 			deleteCounter = 0
 			req := &contract.DeleteMsgRequest{
-				TubeName: msg.Tube.ID,
+				TubeName: model.TMap.Tubes[msg.TubeName].ID,
 				MsgID:    msg.ID,
 			}
 			err = operation.DeleteMsg(req)

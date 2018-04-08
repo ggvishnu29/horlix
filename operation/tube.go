@@ -11,8 +11,8 @@ import (
 
 var SpawnTubeWorkersChan chan *model.Tube = make(chan *model.Tube)
 
-const createTubeOpr = "createtube"
-const deleteTubeOpr = "deletetube"
+const CreateTubeOpr = "createtube"
+const DeleteTubeOpr = "deletetube"
 
 func CreateTube(req *contract.CreateTubeRequest) error {
 	tubeMap := model.GetTubeMap()
@@ -27,7 +27,7 @@ func CreateTube(req *contract.CreateTubeRequest) error {
 	tube := model.NewTube(req.TubeName, req.ReserveTimeoutInSec, fuseSetting)
 	tubeMap.PutTube(tube)
 	SpawnTubeWorkersChan <- tube
-	logger.LogTransaction(createTubeOpr, req)
+	logger.LogTransaction(CreateTubeOpr, req)
 	return nil
 }
 
@@ -41,6 +41,6 @@ func DeleteTube(req *contract.DeleteTubeRequest) error {
 	}
 	tube.IsDeleted = true
 	tubeMap.DeleteTube(tube)
-	logger.LogTransaction(deleteTubeOpr, req)
+	logger.LogTransaction(DeleteTubeOpr, req)
 	return nil
 }

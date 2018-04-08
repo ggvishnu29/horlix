@@ -3,11 +3,11 @@ package model
 var reservedQEnqueueCount = 0
 
 type ReservedQueue struct {
-	qMsgs []*QMsg
+	QMsgs []*QMsg
 }
 
 func (r *ReservedQueue) Enqueue(qMsg *QMsg) {
-	r.qMsgs = append(r.qMsgs, qMsg)
+	r.QMsgs = append(r.QMsgs, qMsg)
 	// reservedQEnqueueCount++
 	// if reservedQEnqueueCount < 100000 {
 	// 	return
@@ -20,31 +20,31 @@ func (r *ReservedQueue) Enqueue(qMsg *QMsg) {
 }
 
 func (r *ReservedQueue) Dequeue() *QMsg {
-	if len(r.qMsgs) == 0 {
+	if len(r.QMsgs) == 0 {
 		return nil
 	}
-	qMsg := r.qMsgs[0]
-	r.qMsgs[0] = nil
-	if len(r.qMsgs) == 1 {
-		r.qMsgs = make([]*QMsg, 0)
+	qMsg := r.QMsgs[0]
+	r.QMsgs[0] = nil
+	if len(r.QMsgs) == 1 {
+		r.QMsgs = make([]*QMsg, 0)
 	} else {
-		r.qMsgs = r.qMsgs[1:]
+		r.QMsgs = r.QMsgs[1:]
 	}
 	return qMsg
 }
 
 func (r *ReservedQueue) Peek() *QMsg {
-	if len(r.qMsgs) == 0 {
+	if len(r.QMsgs) == 0 {
 		return nil
 	}
-	qMsg := r.qMsgs[0]
+	qMsg := r.QMsgs[0]
 	return qMsg
 }
 
 func (r *ReservedQueue) Size() int64 {
-	return int64(len(r.qMsgs))
+	return int64(len(r.QMsgs))
 }
 
 func (r *ReservedQueue) Capacity() int64 {
-	return int64(cap(r.qMsgs))
+	return int64(cap(r.QMsgs))
 }

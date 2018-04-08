@@ -1,7 +1,8 @@
 package worker
 
 import (
-	"encoding/gob"
+	"bufio"
+	"encoding/json"
 	"os"
 	"time"
 
@@ -12,9 +13,11 @@ import (
 )
 
 var snapshotFilePath string
+var transLogPath string
 
 func InitSnapshotter(workingDir string) {
 	snapshotFilePath = workingDir + "/snapshot"
+	transLogPath = workingDir + "/transaction.log"
 }
 
 func TakeSnapshot() error {
@@ -27,23 +30,37 @@ func TakeSnapshot() error {
 	if err != nil {
 		return err
 	}
-	encoder := gob.NewEncoder(tempFile)
+	writer := bufio.NewWriter(tempFile)
+	//encoder := gob.NewEncoder(tempFile)
 	tubeMap := model.GetTubeMap()
 	tubeMap.Lock()
 	defer tubeMap.Unlock()
-	encoder.Encode(tubeMap)
+	bytes, err := json.Marshal(tubeMap)
+	if err != nil {
+		return err
+	}
+	byteString := string(bytes[:])
+	if _, err := writer.WriteString(byteString + "\n"); err != nil {
+		return err
+	}
+	if err := writer.Flush(); err != nil {
+		return err
+	}
+	//encoder.Encode(tubeMap)
 	tempFile.Close()
 	os.Rename(tempFilePath, snapshotFilePath)
+	logger.LogInfo("taken snapshot")
+	logger.TruncateTransLog()
+	logger.LogInfo("trans log truncated")
 	return nil
 }
 
 func StartSnapshotter() {
 	for true {
 		err := TakeSnapshot()
-		logger.TruncateTransLog()
 		if err != nil {
 			panic(err)
 		}
-		time.Sleep(10 * time.Minute)
+		time.Sleep(10 * time.Second)
 	}
 }

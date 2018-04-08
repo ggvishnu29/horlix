@@ -6,13 +6,13 @@ import (
 )
 
 type ReadyQueue struct {
-	qMsgs []*QMsg
+	QMsgs []*QMsg
 }
 
 var readyQEnqueueCount = 0
 
 func (r *ReadyQueue) Enqueue(qMsg *QMsg) {
-	r.qMsgs = append(r.qMsgs, qMsg)
+	r.QMsgs = append(r.QMsgs, qMsg)
 	// readyQEnqueueCount++
 	// if readyQEnqueueCount < 4 {
 	// 	return
@@ -26,27 +26,27 @@ func (r *ReadyQueue) Enqueue(qMsg *QMsg) {
 }
 
 func (r *ReadyQueue) Dequeue() *QMsg {
-	if len(r.qMsgs) == 0 {
+	if len(r.QMsgs) == 0 {
 		return nil
 	}
-	qMsg := r.qMsgs[0]
-	r.qMsgs[0] = nil
-	if len(r.qMsgs) == 1 {
-		r.qMsgs = make([]*QMsg, 0)
+	qMsg := r.QMsgs[0]
+	r.QMsgs[0] = nil
+	if len(r.QMsgs) == 1 {
+		r.QMsgs = make([]*QMsg, 0)
 	} else {
-		r.qMsgs = r.qMsgs[1:]
+		r.QMsgs = r.QMsgs[1:]
 	}
 	return qMsg
 }
 
 func (r *ReadyQueue) Reprioritize() {
-	sort.Slice(r.qMsgs, func(i, j int) bool { return r.qMsgs[i].Msg.Data.Priority > r.qMsgs[j].Msg.Data.Priority })
+	sort.Slice(r.QMsgs, func(i, j int) bool { return r.QMsgs[i].Msg.Data.Priority > r.QMsgs[j].Msg.Data.Priority })
 }
 
 func (r *ReadyQueue) Size() int64 {
-	return int64(len(r.qMsgs))
+	return int64(len(r.QMsgs))
 }
 
 func (r *ReadyQueue) Capacity() int64 {
-	return int64(cap(r.qMsgs))
+	return int64(cap(r.QMsgs))
 }

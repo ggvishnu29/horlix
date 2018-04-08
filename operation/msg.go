@@ -10,11 +10,11 @@ import (
 	"github.com/ggvishnu29/horlix/model"
 )
 
-const putMsgOpr = "put"
-const getMsgOpr = "get"
-const releaseMsgOpr = "release"
-const ackMsgOpr = "ack"
-const deleteMsgOpr = "delete"
+const PutMsgOpr = "putmsg"
+const GetMsgOpr = "getmsg"
+const ReleaseMsgOpr = "releasemsg"
+const AckMsgOpr = "ackmsg"
+const DeleteMsgOpr = "deletemsg"
 
 func PutMsg(req *contract.PutMsgRequest) error {
 	tubeMap := model.GetTubeMap()
@@ -55,7 +55,7 @@ func PutMsg(req *contract.PutMsgRequest) error {
 	default:
 		return fmt.Errorf("unknown state for msg: %v", state)
 	}
-	logger.LogTransaction(putMsgOpr, req)
+	logger.LogTransaction(PutMsgOpr, req)
 	return nil
 }
 
@@ -80,7 +80,7 @@ func GetMsg(req *contract.GetMsgRequest) (*model.Msg, error) {
 		}
 		msg.Metadata.State = model.RESERVED_MSG_STATE
 		BumpUpVersion(msg)
-		reserveTimeoutTimestamp := time.Now().Add(time.Duration(msg.Tube.ReserveTimeoutInSec) * time.Second)
+		reserveTimeoutTimestamp := time.Now().Add(time.Duration(model.TMap.Tubes[msg.TubeName].ReserveTimeoutInSec) * time.Second)
 		msg.Metadata.ReservedTimestamp = &reserveTimeoutTimestamp
 		receiptID, err := GenerateReceiptID()
 		if err != nil {
@@ -88,10 +88,10 @@ func GetMsg(req *contract.GetMsgRequest) (*model.Msg, error) {
 		}
 		msg.ReceiptID = receiptID
 		qMsg = model.NewQMsg(msg)
-		msg.Tube.ReservedQueue.Enqueue(qMsg)
+		model.TMap.Tubes[msg.TubeName].ReservedQueue.Enqueue(qMsg)
 		return qMsg.Msg, nil
 	}
-	logger.LogTransaction(getMsgOpr, req)
+	logger.LogTransaction(GetMsgOpr, req)
 	return nil, nil
 }
 
@@ -116,7 +116,7 @@ func ReleaseMsg(req *contract.ReleaseMsgRequest) error {
 		return fmt.Errorf("receipt ID is not matching")
 	}
 	FuseWaitingDataWithData(msg, req.DelayInSec)
-	logger.LogTransaction(releaseMsgOpr, req)
+	logger.LogTransaction(ReleaseMsgOpr, req)
 	return nil
 }
 
@@ -147,14 +147,14 @@ func AckMsg(req *contract.AckMsgRequest) error {
 	if msg.Metadata.DelayedTimestamp != nil && msg.Metadata.DelayedTimestamp.Sub(time.Now()) > 0 {
 		msg.Metadata.State = model.DELAYED_MSG_STATE
 		qMsg := model.NewQMsg(msg)
-		msg.Tube.DelayedQueue.Enqueue(qMsg)
+		model.TMap.Tubes[msg.TubeName].DelayedQueue.Enqueue(qMsg)
 	} else {
 		msg.Metadata.State = model.READY_MSG_STATE
 		msg.Metadata.DelayedTimestamp = nil
 		qMsg := model.NewQMsg(msg)
-		msg.Tube.ReadyQueue.Enqueue(qMsg)
+		model.TMap.Tubes[msg.TubeName].ReadyQueue.Enqueue(qMsg)
 	}
-	logger.LogTransaction(ackMsgOpr, req)
+	logger.LogTransaction(AckMsgOpr, req)
 	return nil
 }
 
@@ -174,6 +174,6 @@ func DeleteMsg(req *contract.DeleteMsgRequest) error {
 	}
 	msg.IsDeleted = true
 	tube.MsgMap.Delete(msg)
-	logger.LogTransaction(deleteMsgOpr, req)
+	logger.LogTransaction(DeleteMsgOpr, req)
 	return nil
 }

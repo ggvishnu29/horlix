@@ -4,30 +4,30 @@ import (
 	"sync"
 )
 
-var tubeMap = newTubeMap()
+var TMap = newTubeMap()
 
 type TubeMap struct {
 	sync.Mutex
-	tubes map[string]*Tube
+	Tubes map[string]*Tube
 }
 
 func newTubeMap() *TubeMap {
 	tubes := make(map[string]*Tube)
-	return &TubeMap{tubes: tubes}
+	return &TubeMap{Tubes: tubes}
 }
 
 func GetTubeMap() *TubeMap {
-	return tubeMap
+	return TMap
 }
 
 func (t *TubeMap) GetTube(tubeName string) *Tube {
-	return t.tubes[tubeName]
+	return t.Tubes[tubeName]
 }
 
 func (t *TubeMap) PutTube(tube *Tube) {
-	t.tubes[tube.ID] = tube
+	t.Tubes[tube.ID] = tube
 }
 
 func (t *TubeMap) DeleteTube(tube *Tube) {
-	t.tubes[tube.ID] = nil
+	t.Tubes[tube.ID] = nil
 }
