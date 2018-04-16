@@ -74,8 +74,9 @@ func GetMsg(req *contract.GetMsgRequest) (*model.Msg, error) {
 		if qMsg == nil {
 			return nil, nil
 		}
-		msg := qMsg.Msg
-		if msg.Data.Version != qMsg.Version || msg.Metadata.State != model.READY_MSG_STATE || msg.IsDeleted {
+		msgMap := tube.MsgMap
+		msg := msgMap.Get(qMsg.MsgID)
+		if msg == nil || msg.Data.Version != qMsg.Version || msg.Metadata.State != model.READY_MSG_STATE || msg.IsDeleted {
 			continue
 		}
 		msg.Metadata.State = model.RESERVED_MSG_STATE
@@ -89,7 +90,7 @@ func GetMsg(req *contract.GetMsgRequest) (*model.Msg, error) {
 		msg.ReceiptID = receiptID
 		qMsg = model.NewQMsg(msg)
 		model.TMap.Tubes[msg.TubeName].ReservedQueue.Enqueue(qMsg)
-		return qMsg.Msg, nil
+		return msg, nil
 	}
 	logger.LogTransaction(GetMsgOpr, req)
 	return nil, nil

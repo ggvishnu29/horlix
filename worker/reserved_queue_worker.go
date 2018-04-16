@@ -24,8 +24,9 @@ func processReservedQMsg(tube *model.Tube) error {
 		time.Sleep(1 * time.Second)
 		return nil
 	}
-	msg := qMsg.Msg
-	if msg.Data == nil || msg.Data.Version != qMsg.Version || msg.IsDeleted || msg.Metadata.State != model.RESERVED_MSG_STATE {
+	msgMap := tube.MsgMap
+	msg := msgMap.Get(qMsg.MsgID)
+	if msg == nil || msg.Data == nil || msg.Data.Version != qMsg.Version || msg.IsDeleted || msg.Metadata.State != model.RESERVED_MSG_STATE {
 		tube.ReservedQueue.Dequeue()
 		tube.Lock.UnLock()
 		return nil

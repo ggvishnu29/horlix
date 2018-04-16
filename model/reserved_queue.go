@@ -8,15 +8,6 @@ type ReservedQueue struct {
 
 func (r *ReservedQueue) Enqueue(qMsg *QMsg) {
 	r.QMsgs = append(r.QMsgs, qMsg)
-	// reservedQEnqueueCount++
-	// if reservedQEnqueueCount < 100000 {
-	// 	return
-	// }
-	// tempQ := make([]*QMsg, len(r.qMsgs))
-	// copy(tempQ, r.qMsgs)
-	// r.qMsgs = tempQ
-	// reservedQEnqueueCount = 0
-	// runtime.GC()
 }
 
 func (r *ReservedQueue) Dequeue() *QMsg {

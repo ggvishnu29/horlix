@@ -2,8 +2,6 @@ package model
 
 import (
 	"sort"
-
-	"github.com/ggvishnu29/horlix/logger"
 )
 
 var delayedQEnqueueCount = 0
@@ -14,20 +12,14 @@ type DelayedQueue struct {
 
 func (d *DelayedQueue) Enqueue(qMsg *QMsg) {
 	d.QMsgs = append(d.QMsgs, qMsg)
-	// delayedQEnqueueCount++
-	// if delayedQEnqueueCount < 100000 {
-	// 	return
-	// }
-	// tempQ := make([]*QMsg, len(d.qMsgs))
-	// copy(tempQ, d.qMsgs)
-	// d.qMsgs = tempQ
-	// delayedQEnqueueCount = 0
+	//todo: get tubeMap lock & get tube lock
+	tube := GetTubeMap().GetTube(qMsg.TubeID)
+	msgMap := tube.MsgMap
 	sort.Slice(d.QMsgs, func(i, j int) bool {
-		return d.QMsgs[i].Msg.Metadata.DelayedTimestamp.Before(*d.QMsgs[j].Msg.Metadata.DelayedTimestamp)
+		msg1 := msgMap.Get(d.QMsgs[i].MsgID)
+		msg2 := msgMap.Get(d.QMsgs[j].MsgID)
+		return msg1.Metadata.DelayedTimestamp.Before(*msg2.Metadata.DelayedTimestamp)
 	})
-	//logger.LogInfo("after enqueueing")
-	//d.Print()
-	//runtime.GC()
 }
 
 func (d *DelayedQueue) Dequeue() *QMsg {
@@ -52,12 +44,6 @@ func (d *DelayedQueue) Peek() *QMsg {
 	return qMsg
 }
 
-func (d *DelayedQueue) Reprioritize() {
-	sort.Slice(d.QMsgs, func(i, j int) bool {
-		return d.QMsgs[i].Msg.Metadata.DelayedTimestamp.Before(*d.QMsgs[j].Msg.Metadata.DelayedTimestamp)
-	})
-}
-
 func (d *DelayedQueue) Size() int64 {
 	return int64(len(d.QMsgs))
 }
@@ -66,8 +52,8 @@ func (d *DelayedQueue) Capacity() int64 {
 	return int64(cap(d.QMsgs))
 }
 
-func (d *DelayedQueue) Print() {
-	for _, qMsg := range d.QMsgs {
-		logger.LogInfof("%v %v\n", qMsg.Msg.ID, qMsg.Msg.Metadata.DelayedTimestamp)
-	}
-}
+// func (d *DelayedQueue) Print() {
+// 	for _, qMsg := range d.QMsgs {
+// 		logger.LogInfof("%v %v\n", qMsg.Msg.ID, qMsg.Msg.Metadata.DelayedTimestamp)
+// 	}
+// }

@@ -1,28 +1,13 @@
 package model
 
-import (
-	//"github.com/ggvishnu29/horlix/logger"
-	"sort"
-)
+//"github.com/ggvishnu29/horlix/logger"
 
 type ReadyQueue struct {
 	QMsgs []*QMsg
 }
 
-var readyQEnqueueCount = 0
-
 func (r *ReadyQueue) Enqueue(qMsg *QMsg) {
 	r.QMsgs = append(r.QMsgs, qMsg)
-	// readyQEnqueueCount++
-	// if readyQEnqueueCount < 4 {
-	// 	return
-	// }
-	// //logger.LogInfof("ready queue length: %v\n", len(r.qMsgs))
-	// tempQ := make([]*QMsg, len(r.qMsgs))
-	// copy(tempQ, r.qMsgs)
-	// r.qMsgs = tempQ
-	// readyQEnqueueCount = 0
-	// runtime.GC()
 }
 
 func (r *ReadyQueue) Dequeue() *QMsg {
@@ -37,10 +22,6 @@ func (r *ReadyQueue) Dequeue() *QMsg {
 		r.QMsgs = r.QMsgs[1:]
 	}
 	return qMsg
-}
-
-func (r *ReadyQueue) Reprioritize() {
-	sort.Slice(r.QMsgs, func(i, j int) bool { return r.QMsgs[i].Msg.Data.Priority > r.QMsgs[j].Msg.Data.Priority })
 }
 
 func (r *ReadyQueue) Size() int64 {

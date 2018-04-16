@@ -1,13 +1,15 @@
 package model
 
 type QMsg struct {
-	Msg     *Msg
+	TubeID  string
+	MsgID   string
 	Version int64
 }
 
 func NewQMsg(msg *Msg) *QMsg {
 	return &QMsg{
-		Msg:     msg,
+		TubeID:  msg.TubeName,
+		MsgID:   msg.ID,
 		Version: msg.Data.Version,
 	}
 }

@@ -37,7 +37,10 @@ func RecoverFromTransLog() error {
 		return err
 	}
 	defer tFile.Close()
+	logger.SetTransLogRecoveryFlag()
+	defer logger.UnSetTransLogRecoveryFlag()
 	scanner := bufio.NewScanner(tFile)
+	tCount := 0
 	for scanner.Scan() {
 		opr := scanner.Text()
 		if scanner.Scan() != true {
@@ -104,8 +107,12 @@ func RecoverFromTransLog() error {
 			if err := operation.DeleteTube(req); err != nil {
 				return err
 			}
+		default:
+			panic("unknown operation found in trans log: " + opr)
 		}
+		tCount++
 	}
+	logger.LogInfof("recovered %v operations from trans log\n", tCount)
 	if err := scanner.Err(); err != nil {
 		return err
 	}

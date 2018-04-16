@@ -34,8 +34,8 @@ func main() {
 	//tube := model.TMap.GetTube("tube1")
 	//logger.LogInfof("readyQSize: %v reservedQSize: %v delayedQSize: %v\n", tube.ReadyQueue.Size(), tube.ReservedQueue.Size(), tube.DelayedQueue.Size())
 	//time.Sleep(10 * time.Second)
-	logger.InitTransLogger("/tmp")
 	logger.LogInfo("starting horlix")
+	logger.InitTransLogger("/tmp")
 	// start http process here
 	go worker.StartSnapshotter()
 	logger.LogInfo("started horlix")
@@ -66,7 +66,7 @@ func testHorlix() {
 		if msg == nil {
 			continue
 		}
-		logger.LogInfof("%v\n", msg.Data.DataSlice)
+		//logger.LogInfof("%v\n", msg.Data.DataSlice)
 		releaseCounter++
 		deleteCounter++
 		if releaseCounter == 10000 {
