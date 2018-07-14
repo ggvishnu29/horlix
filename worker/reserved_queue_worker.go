@@ -44,5 +44,5 @@ func processReservedQMsg(tube *model.Tube) error {
 
 func fuseReservedQMsg(tube *model.Tube, msg *model.Msg) {
 	// putting back with delay as zero so that the msg becomes visible immediately
-	operation.FuseWaitingDataWithData(msg, 0)
+	operation.FuseWaitingDataWithData(msg, 0, tube)
 }

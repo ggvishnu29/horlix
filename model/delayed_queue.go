@@ -7,7 +7,13 @@ import (
 var delayedQEnqueueCount = 0
 
 type DelayedQueue struct {
-	QMsgs []*QMsg
+	QMsgs  []*QMsg
+	TubeID string
+	msgMap *MsgMap
+}
+
+func (d *DelayedQueue) InitDelayedQueue() {
+
 }
 
 func (d *DelayedQueue) Enqueue(qMsg *QMsg) {

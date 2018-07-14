@@ -47,11 +47,11 @@ func PutMsg(req *contract.PutMsgRequest) error {
 	state := msg.Metadata.State
 	switch state {
 	case model.READY_MSG_STATE:
-		FuseReadyData(data, msg)
+		FuseReadyData(data, msg, tube)
 	case model.RESERVED_MSG_STATE:
-		FuseWaitingData(data, msg)
+		FuseWaitingData(data, msg, tube)
 	case model.DELAYED_MSG_STATE:
-		FuseDelayedData(data, msg)
+		FuseDelayedData(data, msg, tube)
 	default:
 		return fmt.Errorf("unknown state for msg: %v", state)
 	}
@@ -89,7 +89,7 @@ func GetMsg(req *contract.GetMsgRequest) (*model.Msg, error) {
 		}
 		msg.ReceiptID = receiptID
 		qMsg = model.NewQMsg(msg)
-		model.TMap.Tubes[msg.TubeName].ReservedQueue.Enqueue(qMsg)
+		tube.ReservedQueue.Enqueue(qMsg)
 		return msg, nil
 	}
 	logger.LogTransaction(GetMsgOpr, req)
@@ -116,7 +116,7 @@ func ReleaseMsg(req *contract.ReleaseMsgRequest) error {
 	if msg.ReceiptID != req.ReceiptID {
 		return fmt.Errorf("receipt ID is not matching")
 	}
-	FuseWaitingDataWithData(msg, req.DelayInSec)
+	FuseWaitingDataWithData(msg, req.DelayInSec, tube)
 	logger.LogTransaction(ReleaseMsgOpr, req)
 	return nil
 }
@@ -148,12 +148,12 @@ func AckMsg(req *contract.AckMsgRequest) error {
 	if msg.Metadata.DelayedTimestamp != nil && msg.Metadata.DelayedTimestamp.Sub(time.Now()) > 0 {
 		msg.Metadata.State = model.DELAYED_MSG_STATE
 		qMsg := model.NewQMsg(msg)
-		model.TMap.Tubes[msg.TubeName].DelayedQueue.Enqueue(qMsg)
+		tube.DelayedQueue.Enqueue(qMsg)
 	} else {
 		msg.Metadata.State = model.READY_MSG_STATE
 		msg.Metadata.DelayedTimestamp = nil
 		qMsg := model.NewQMsg(msg)
-		model.TMap.Tubes[msg.TubeName].ReadyQueue.Enqueue(qMsg)
+		tube.ReadyQueue.Enqueue(qMsg)
 	}
 	logger.LogTransaction(AckMsgOpr, req)
 	return nil
