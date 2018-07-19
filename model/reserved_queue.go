@@ -3,7 +3,8 @@ package model
 var reservedQEnqueueCount = 0
 
 type ReservedQueue struct {
-	QMsgs []*QMsg
+	QMsgs  []*QMsg
+	TubeID string
 }
 
 func (r *ReservedQueue) Enqueue(qMsg *QMsg) {

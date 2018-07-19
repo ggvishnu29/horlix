@@ -33,8 +33,8 @@ func TakeSnapshot() error {
 	writer := bufio.NewWriter(tempFile)
 	//encoder := gob.NewEncoder(tempFile)
 	tubeMap := model.GetTubeMap()
-	tubeMap.Lock()
-	defer tubeMap.Unlock()
+	tubeMap.Lock.Lock()
+	defer tubeMap.Lock.UnLock()
 	bytes, err := json.Marshal(tubeMap)
 	if err != nil {
 		return err

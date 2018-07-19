@@ -23,7 +23,7 @@ func NewTube(ID string, reserveTimeoutInSec int64, fuseSetting *FuseSetting) *Tu
 		Lock:                &Lock{},
 		MsgMap:              NewMsgMap(),
 		ReadyQueue:          &ReadyQueue{},
-		DelayedQueue:        &DelayedQueue{},
+		DelayedQueue:        &DelayedQueue{TubeID: ID},
 		ReservedQueue:       &ReservedQueue{},
 		ReserveTimeoutInSec: reserveTimeoutInSec,
 		FuseSetting:         fuseSetting,

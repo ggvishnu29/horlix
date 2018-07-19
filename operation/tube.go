@@ -16,8 +16,8 @@ const DeleteTubeOpr = "deletetube"
 
 func CreateTube(req *contract.CreateTubeRequest) error {
 	tubeMap := model.GetTubeMap()
-	tubeMap.Lock()
-	defer tubeMap.Unlock()
+	tubeMap.Lock.Lock()
+	defer tubeMap.Lock.UnLock()
 	if tubeMap.GetTube(req.TubeName) != nil {
 		return fmt.Errorf("tube already exists")
 	}
@@ -33,8 +33,8 @@ func CreateTube(req *contract.CreateTubeRequest) error {
 
 func DeleteTube(req *contract.DeleteTubeRequest) error {
 	tubeMap := model.GetTubeMap()
-	tubeMap.Lock()
-	defer tubeMap.Unlock()
+	tubeMap.Lock.Lock()
+	defer tubeMap.Lock.UnLock()
 	tube := tubeMap.GetTube(req.TubeName)
 	if tube == nil {
 		return fmt.Errorf("tube not found")

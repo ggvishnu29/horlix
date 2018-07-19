@@ -12,18 +12,15 @@ type DelayedQueue struct {
 	msgMap *MsgMap
 }
 
-func (d *DelayedQueue) InitDelayedQueue() {
-
+func (d *DelayedQueue) Init() {
+	d.msgMap = GetTubeMap().GetTube(d.TubeID).MsgMap
 }
 
 func (d *DelayedQueue) Enqueue(qMsg *QMsg) {
 	d.QMsgs = append(d.QMsgs, qMsg)
-	//todo: get tubeMap lock & get tube lock
-	tube := GetTubeMap().GetTube(qMsg.TubeID)
-	msgMap := tube.MsgMap
 	sort.Slice(d.QMsgs, func(i, j int) bool {
-		msg1 := msgMap.Get(d.QMsgs[i].MsgID)
-		msg2 := msgMap.Get(d.QMsgs[j].MsgID)
+		msg1 := d.msgMap.Get(d.QMsgs[i].MsgID)
+		msg2 := d.msgMap.Get(d.QMsgs[j].MsgID)
 		return msg1.Metadata.DelayedTimestamp.Before(*msg2.Metadata.DelayedTimestamp)
 	})
 }

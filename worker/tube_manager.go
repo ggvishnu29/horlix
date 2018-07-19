@@ -8,6 +8,7 @@ import (
 func StartTubesManager() {
 	for tube := range operation.SpawnTubeWorkersChan {
 		logger.LogInfof("spanning tube worker for tube: %v\n", tube.ID)
+		tube.DelayedQueue.Init()
 		go StartDelayedQueueWorker(tube)
 		go StartReservedQueueWorker(tube)
 	}

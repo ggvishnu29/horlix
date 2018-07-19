@@ -1,12 +1,12 @@
 package model
 
-//"github.com/ggvishnu29/horlix/logger"
-
 type ReadyQueue struct {
-	QMsgs []*QMsg
+	QMsgs  []*QMsg
+	TubeID string
 }
 
 func (r *ReadyQueue) Enqueue(qMsg *QMsg) {
+	//todo: sort queue based on priority
 	r.QMsgs = append(r.QMsgs, qMsg)
 }
 

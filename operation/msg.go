@@ -18,12 +18,13 @@ const DeleteMsgOpr = "deletemsg"
 
 func PutMsg(req *contract.PutMsgRequest) error {
 	tubeMap := model.GetTubeMap()
-	tubeMap.Lock()
-	defer tubeMap.Unlock()
+	tubeMap.Lock.Lock()
 	tube := tubeMap.GetTube(req.TubeName)
 	if tube == nil {
+		tubeMap.Lock.UnLock()
 		return fmt.Errorf("tube not found")
 	}
+	tubeMap.Lock.UnLock()
 	tube.Lock.Lock()
 	defer tube.Lock.UnLock()
 	msg := tube.MsgMap.Get(req.MsgID)
@@ -61,12 +62,13 @@ func PutMsg(req *contract.PutMsgRequest) error {
 
 func GetMsg(req *contract.GetMsgRequest) (*model.Msg, error) {
 	tubeMap := model.GetTubeMap()
-	tubeMap.Lock()
-	defer tubeMap.Unlock()
+	tubeMap.Lock.Lock()
 	tube := tubeMap.GetTube(req.TubeName)
 	if tube == nil {
+		tubeMap.Lock.UnLock()
 		return nil, fmt.Errorf("tube not found")
 	}
+	tubeMap.Lock.UnLock()
 	tube.Lock.Lock()
 	defer tube.Lock.UnLock()
 	for true {
@@ -98,12 +100,13 @@ func GetMsg(req *contract.GetMsgRequest) (*model.Msg, error) {
 
 func ReleaseMsg(req *contract.ReleaseMsgRequest) error {
 	tubeMap := model.GetTubeMap()
-	tubeMap.Lock()
-	defer tubeMap.Unlock()
+	tubeMap.Lock.Lock()
 	tube := tubeMap.GetTube(req.TubeName)
 	if tube == nil {
+		tubeMap.Lock.UnLock()
 		return fmt.Errorf("tube not found")
 	}
+	tubeMap.Lock.UnLock()
 	tube.Lock.Lock()
 	defer tube.Lock.UnLock()
 	msg := tube.MsgMap.Get(req.MsgID)
@@ -123,12 +126,13 @@ func ReleaseMsg(req *contract.ReleaseMsgRequest) error {
 
 func AckMsg(req *contract.AckMsgRequest) error {
 	tubeMap := model.GetTubeMap()
-	tubeMap.Lock()
-	defer tubeMap.Unlock()
+	tubeMap.Lock.Lock()
 	tube := tubeMap.GetTube(req.TubeName)
 	if tube == nil {
+		tubeMap.Lock.UnLock()
 		return fmt.Errorf("tube not found")
 	}
+	tubeMap.Lock.UnLock()
 	tube.Lock.Lock()
 	defer tube.Lock.UnLock()
 	msg := tube.MsgMap.Get(req.MsgID)
@@ -161,12 +165,13 @@ func AckMsg(req *contract.AckMsgRequest) error {
 
 func DeleteMsg(req *contract.DeleteMsgRequest) error {
 	tubeMap := model.GetTubeMap()
-	tubeMap.Lock()
-	defer tubeMap.Unlock()
+	tubeMap.Lock.Lock()
 	tube := tubeMap.GetTube(req.TubeName)
 	if tube == nil {
+		tubeMap.Lock.UnLock()
 		return fmt.Errorf("tube not found")
 	}
+	tubeMap.Lock.UnLock()
 	tube.Lock.Lock()
 	defer tube.Lock.UnLock()
 	msg := tube.MsgMap.Get(req.MsgID)

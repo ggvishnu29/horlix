@@ -1,19 +1,18 @@
 package model
 
-import (
-	"sync"
-)
-
 var TMap = newTubeMap()
 
 type TubeMap struct {
-	sync.Mutex
+	Lock  *Lock
 	Tubes map[string]*Tube
 }
 
 func newTubeMap() *TubeMap {
 	tubes := make(map[string]*Tube)
-	return &TubeMap{Tubes: tubes}
+	return &TubeMap{
+		Tubes: tubes,
+		Lock:  &Lock{},
+	}
 }
 
 func GetTubeMap() *TubeMap {
