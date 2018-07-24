@@ -1,8 +1,6 @@
 package operation
 
 import (
-	"github.com/ggvishnu29/horlix/logger"
-
 	"fmt"
 	"time"
 
@@ -29,22 +27,22 @@ func PutMsg(req *contract.PutMsgRequest) error {
 	defer tube.Lock.UnLock()
 	msg := tube.MsgMap.Get(req.MsgID)
 	if msg == nil {
-		msg = model.NewMsg(req.MsgID, req.DataBytes, req.DelayInSec, req.Priority, tube)
+		msg = model.NewMsg(req.MsgID, [][]byte{req.DataBytes}, req.DelayInSec, req.Priority, tube)
 		tube.MsgMap.AddOrUpdate(msg)
 		if req.DelayInSec <= 0 {
-			msg.Metadata.State = model.READY_MSG_STATE
+			msg.SetMsgState(model.READY_MSG_STATE)
 			qMsg := model.NewQMsg(msg)
 			tube.ReadyQueue.Enqueue(qMsg)
 		} else {
-			msg.Metadata.State = model.DELAYED_MSG_STATE
+			msg.SetMsgState(model.DELAYED_MSG_STATE)
 			delayedTimestamp := time.Now().Add(time.Duration(req.DelayInSec) * time.Second)
-			msg.Metadata.DelayedTimestamp = &delayedTimestamp
+			msg.SetDelayedTimestamp(&delayedTimestamp)
 			qMsg := model.NewQMsg(msg)
 			tube.DelayedQueue.Enqueue(qMsg)
 		}
 		return nil
 	}
-	data := model.NewData(req.DataBytes, req.Priority, req.DelayInSec)
+	data := model.NewData([][]byte{req.DataBytes}, req.Priority, req.DelayInSec)
 	state := msg.Metadata.State
 	switch state {
 	case model.READY_MSG_STATE:
@@ -56,7 +54,6 @@ func PutMsg(req *contract.PutMsgRequest) error {
 	default:
 		return fmt.Errorf("unknown state for msg: %v", state)
 	}
-	logger.LogTransaction(PutMsgOpr, req)
 	return nil
 }
 
@@ -81,20 +78,19 @@ func GetMsg(req *contract.GetMsgRequest) (*model.Msg, error) {
 		if msg == nil || msg.Data.Version != qMsg.Version || msg.Metadata.State != model.READY_MSG_STATE || msg.IsDeleted {
 			continue
 		}
-		msg.Metadata.State = model.RESERVED_MSG_STATE
+		msg.SetMsgState(model.RESERVED_MSG_STATE)
 		BumpUpVersion(msg)
 		reserveTimeoutTimestamp := time.Now().Add(time.Duration(model.TMap.Tubes[msg.TubeName].ReserveTimeoutInSec) * time.Second)
-		msg.Metadata.ReservedTimestamp = &reserveTimeoutTimestamp
+		msg.SetReservedTimestamp(&reserveTimeoutTimestamp)
 		receiptID, err := GenerateReceiptID()
 		if err != nil {
 			return nil, fmt.Errorf("error generating unique receipt ID: %v", err)
 		}
-		msg.ReceiptID = receiptID
+		msg.SetReceiptID(&receiptID)
 		qMsg = model.NewQMsg(msg)
 		tube.ReservedQueue.Enqueue(qMsg)
 		return msg, nil
 	}
-	logger.LogTransaction(GetMsgOpr, req)
 	return nil, nil
 }
 
@@ -120,7 +116,6 @@ func ReleaseMsg(req *contract.ReleaseMsgRequest) error {
 		return fmt.Errorf("receipt ID is not matching")
 	}
 	FuseWaitingDataWithData(msg, req.DelayInSec, tube)
-	logger.LogTransaction(ReleaseMsgOpr, req)
 	return nil
 }
 
@@ -141,25 +136,22 @@ func AckMsg(req *contract.AckMsgRequest) error {
 	}
 	BumpUpVersion(msg)
 	if msg.WaitingData == nil {
-		msg.IsDeleted = true
-		tube.MsgMap.Delete(msg)
+		msg.SetDeleted(true)
+		tube.MsgMap.Delete(msg.ID)
 		return nil
 	}
-	msg.Data.DataSlice = msg.WaitingData.DataSlice
-	msg.Data.Priority = msg.WaitingData.Priority
-	msg.Data.DelayInSec = msg.WaitingData.DelayInSec
-	msg.WaitingData = nil
+	msg.MoveWaitingDataToData()
+	msg.SetWaitingData(nil)
 	if msg.Metadata.DelayedTimestamp != nil && msg.Metadata.DelayedTimestamp.Sub(time.Now()) > 0 {
-		msg.Metadata.State = model.DELAYED_MSG_STATE
+		msg.SetMsgState(model.DELAYED_MSG_STATE)
 		qMsg := model.NewQMsg(msg)
 		tube.DelayedQueue.Enqueue(qMsg)
 	} else {
-		msg.Metadata.State = model.READY_MSG_STATE
-		msg.Metadata.DelayedTimestamp = nil
+		msg.SetMsgState(model.READY_MSG_STATE)
+		msg.SetDelayedTimestamp(nil)
 		qMsg := model.NewQMsg(msg)
 		tube.ReadyQueue.Enqueue(qMsg)
 	}
-	logger.LogTransaction(AckMsgOpr, req)
 	return nil
 }
 
@@ -178,8 +170,7 @@ func DeleteMsg(req *contract.DeleteMsgRequest) error {
 	if msg == nil {
 		return fmt.Errorf("no msg in the tube with the id")
 	}
-	msg.IsDeleted = true
-	tube.MsgMap.Delete(msg)
-	logger.LogTransaction(DeleteMsgOpr, req)
+	msg.SetDeleted(true)
+	tube.MsgMap.Delete(msg.ID)
 	return nil
 }

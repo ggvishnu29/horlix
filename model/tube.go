@@ -1,5 +1,9 @@
 package model
 
+import (
+	"github.com/ggvishnu29/horlix/serde"
+)
+
 const (
 	REPLACE_DATA = iota
 	APPEND_DATA
@@ -18,16 +22,23 @@ type Tube struct {
 }
 
 func NewTube(ID string, reserveTimeoutInSec int64, fuseSetting *FuseSetting) *Tube {
-	return &Tube{
+	t := &Tube{
 		ID:                  ID,
 		Lock:                &Lock{},
-		MsgMap:              NewMsgMap(),
-		ReadyQueue:          &ReadyQueue{},
-		DelayedQueue:        &DelayedQueue{TubeID: ID},
-		ReservedQueue:       &ReservedQueue{},
+		MsgMap:              NewMsgMap(ID),
+		ReadyQueue:          NewReadyQueue(ID),
+		DelayedQueue:        NewDelayedQueue(ID),
+		ReservedQueue:       NewReservedQueue(ID),
 		ReserveTimeoutInSec: reserveTimeoutInSec,
 		FuseSetting:         fuseSetting,
 	}
+	return t
+}
+
+func (t *Tube) SetDeleted(isDeleted bool) {
+	t.IsDeleted = isDeleted
+	opr := serde.NewOperation(TUBE, SET_TUBE_DELETED_OPR, &t.ID, isDeleted)
+	LogOpr(opr)
 }
 
 type FuseSetting struct {

@@ -140,22 +140,5 @@ func loadDataFromSnapshot() error {
 		return err
 	}
 	model.TMap = tmap
-	//fmt.Println(line)
-	// scanner := bufio.NewScanner(file)
-	// var byteString string
-	// for scanner.Scan() {
-	// 	byteString = scanner.Text()
-	// }
-	// if err := scanner.Err(); err != nil {
-	// 	return err
-	// }
-	// fmt.Println(byteString)
-	// bytes := []byte(byteString)
-
-	// tmap := &model.TubeMap{}
-	// if err := json.Unmarshal(bytes, tmap); err != nil {
-	// 	return err
-	// }
-	// model.TMap = tmap
 	return nil
 }

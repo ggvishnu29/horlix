@@ -2,6 +2,8 @@ package model
 
 import (
 	"sort"
+
+	"github.com/ggvishnu29/horlix/serde"
 )
 
 var delayedQEnqueueCount = 0
@@ -12,6 +14,15 @@ type DelayedQueue struct {
 	msgMap *MsgMap
 }
 
+func NewDelayedQueue(tubeID string) *DelayedQueue {
+	d := &DelayedQueue{
+		TubeID: tubeID,
+	}
+	return d
+}
+
+// this method can be called directly when restoring data from the snapshot
+// since we do not export the msgMap when taking snapshot
 func (d *DelayedQueue) Init() {
 	d.msgMap = GetTubeMap().GetTube(d.TubeID).MsgMap
 }
@@ -23,6 +34,8 @@ func (d *DelayedQueue) Enqueue(qMsg *QMsg) {
 		msg2 := d.msgMap.Get(d.QMsgs[j].MsgID)
 		return msg1.Metadata.DelayedTimestamp.Before(*msg2.Metadata.DelayedTimestamp)
 	})
+	opr := serde.NewOperation(DELAYED_QUEUE, ENQUEUE_OPR, &d.TubeID, qMsg)
+	LogOpr(opr)
 }
 
 func (d *DelayedQueue) Dequeue() *QMsg {
@@ -36,6 +49,8 @@ func (d *DelayedQueue) Dequeue() *QMsg {
 	} else {
 		d.QMsgs = d.QMsgs[1:]
 	}
+	opr := serde.NewOperation(DELAYED_QUEUE, DEQUEUE_OPR, &d.TubeID)
+	LogOpr(opr)
 	return qMsg
 }
 
@@ -54,9 +69,3 @@ func (d *DelayedQueue) Size() int64 {
 func (d *DelayedQueue) Capacity() int64 {
 	return int64(cap(d.QMsgs))
 }
-
-// func (d *DelayedQueue) Print() {
-// 	for _, qMsg := range d.QMsgs {
-// 		logger.LogInfof("%v %v\n", qMsg.Msg.ID, qMsg.Msg.Metadata.DelayedTimestamp)
-// 	}
-// }

@@ -44,8 +44,8 @@ func processDelayedQMsg(tube *model.Tube) error {
 
 func moveQMsgToReadyQ(tube *model.Tube, msg *model.Msg) {
 	operation.BumpUpVersion(msg)
-	msg.Metadata.State = model.READY_MSG_STATE
-	msg.Metadata.DelayedTimestamp = nil
+	msg.SetMsgState(model.READY_MSG_STATE)
+	msg.SetDelayedTimestamp(nil)
 	qMsg := model.NewQMsg(msg)
 	tube.ReadyQueue.Enqueue(qMsg)
 }

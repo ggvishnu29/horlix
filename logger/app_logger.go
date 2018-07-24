@@ -24,6 +24,14 @@ func LogInfo(msg string) {
 	aLogger.Println(msg)
 }
 
-func LogInfof(format string, a ...interface{}) {
-	aLogger.Printf(format, a...)
+func LogInfof(format string, v ...interface{}) {
+	aLogger.Printf(format, v...)
+}
+
+func LogFatal(msg string) {
+	aLogger.Fatalln(msg)
+}
+
+func LogFatalf(format string, v ...interface{}) {
+	aLogger.Fatalf(format, v)
 }

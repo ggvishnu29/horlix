@@ -5,7 +5,7 @@ import "encoding/json"
 type ReleaseMsgRequest struct {
 	TubeName   string
 	MsgID      string
-	ReceiptID  string
+	ReceiptID  *string
 	DelayInSec int64
 }
 

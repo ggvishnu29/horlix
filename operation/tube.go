@@ -3,8 +3,6 @@ package operation
 import (
 	"fmt"
 
-	"github.com/ggvishnu29/horlix/logger"
-
 	"github.com/ggvishnu29/horlix/contract"
 	"github.com/ggvishnu29/horlix/model"
 )
@@ -26,8 +24,8 @@ func CreateTube(req *contract.CreateTubeRequest) error {
 	}
 	tube := model.NewTube(req.TubeName, req.ReserveTimeoutInSec, fuseSetting)
 	tubeMap.PutTube(tube)
+	tube.DelayedQueue.Init()
 	SpawnTubeWorkersChan <- tube
-	logger.LogTransaction(CreateTubeOpr, req)
 	return nil
 }
 
@@ -39,8 +37,7 @@ func DeleteTube(req *contract.DeleteTubeRequest) error {
 	if tube == nil {
 		return fmt.Errorf("tube not found")
 	}
-	tube.IsDeleted = true
-	tubeMap.DeleteTube(tube)
-	logger.LogTransaction(DeleteTubeOpr, req)
+	tube.SetDeleted(true)
+	tubeMap.DeleteTube(tube.ID)
 	return nil
 }

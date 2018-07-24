@@ -5,7 +5,7 @@ import "encoding/json"
 type AckMsgRequest struct {
 	TubeName  string
 	MsgID     string
-	ReceiptID string
+	ReceiptID *string
 }
 
 func (a *AckMsgRequest) Serialize() ([]byte, error) {

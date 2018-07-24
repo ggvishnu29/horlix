@@ -1,5 +1,9 @@
 package model
 
+import (
+	"github.com/ggvishnu29/horlix/serde"
+)
+
 var TMap = newTubeMap()
 
 type TubeMap struct {
@@ -25,8 +29,12 @@ func (t *TubeMap) GetTube(tubeName string) *Tube {
 
 func (t *TubeMap) PutTube(tube *Tube) {
 	t.Tubes[tube.ID] = tube
+	opr := serde.NewOperation(TUBE_MAP, PUT_OPR, nil, tube.ID, tube.FuseSetting, tube.ReserveTimeoutInSec)
+	LogOpr(opr)
 }
 
-func (t *TubeMap) DeleteTube(tube *Tube) {
-	t.Tubes[tube.ID] = nil
+func (t *TubeMap) DeleteTube(tubeID string) {
+	t.Tubes[tubeID] = nil
+	opr := serde.NewOperation(TUBE_MAP, DELETE_OPR, nil, tubeID)
+	LogOpr(opr)
 }

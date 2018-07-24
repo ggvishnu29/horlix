@@ -7,63 +7,65 @@ import (
 )
 
 func FuseReadyData(data *model.Data, msg *model.Msg, tube *model.Tube) {
-	if tube.FuseSetting.Data == model.REPLACE_DATA || msg.Data == nil {
-		msg.Data.DataSlice = data.DataSlice
+	if msg.Data == nil {
+		msg.SetData(data)
+		return
+	}
+	if tube.FuseSetting.Data == model.REPLACE_DATA {
+		msg.SetDataSlice(data.DataSlice)
 	} else {
-		previousDataSlice := msg.Data.DataSlice
-		msg.Data.DataSlice = append(previousDataSlice, data.DataSlice...)
+		msg.AppendDataSlice(data.DataSlice)
 	}
 }
 
 func FuseDelayedData(data *model.Data, msg *model.Msg, tube *model.Tube) {
-	if tube.FuseSetting.Data == model.REPLACE_DATA || msg.Data == nil {
-		msg.Data.DataSlice = data.DataSlice
+	if msg.Data == nil {
+		msg.SetData(data)
+		return
+	}
+	if tube.FuseSetting.Data == model.REPLACE_DATA {
+		msg.SetDataSlice(data.DataSlice)
 	} else {
-		previousDataSlice := msg.Data.DataSlice
-		msg.Data.DataSlice = append(previousDataSlice, data.DataSlice...)
+		msg.AppendDataSlice(data.DataSlice)
 	}
 }
 
 func FuseWaitingData(data *model.Data, msg *model.Msg, tube *model.Tube) {
 	if msg.WaitingData == nil {
-		msg.WaitingData = data
+		msg.SetWaitingData(data)
 		if data.DelayInSec > 0 {
 			delayedTimestamp := time.Now().Add(time.Duration(data.DelayInSec) * time.Second)
-			msg.Metadata.DelayedTimestamp = &delayedTimestamp
+			msg.SetDelayedTimestamp(&delayedTimestamp)
 		}
 	} else if tube.FuseSetting.Data == model.REPLACE_DATA {
-		msg.WaitingData.DataSlice = data.DataSlice
+		msg.SetWaitingDataSlice(data.DataSlice)
 	} else {
-		previousDataSlice := msg.WaitingData.DataSlice
-		msg.WaitingData.DataSlice = append(previousDataSlice, data.DataSlice...)
+		msg.AppendWaitingDataSlice(data.DataSlice)
 	}
 }
 
 func FuseWaitingDataWithData(msg *model.Msg, delayInSec int64, tube *model.Tube) {
-	msg.Metadata.ReservedTimestamp = nil
-	if msg.WaitingData != nil {
+	msg.SetReservedTimestamp(nil)
+	if msg.Data == nil {
+		msg.MoveWaitingDataToData()
+	} else if msg.WaitingData != nil {
 		if tube.FuseSetting.Data == model.REPLACE_DATA {
-			msg.Data.DataSlice = msg.WaitingData.DataSlice
+			msg.ReplaceDataWithWaitingDataSlice()
 		} else {
-			if msg.Data == nil {
-				msg.Data = msg.WaitingData
-			} else {
-				previousDataSlice := msg.Data.DataSlice
-				msg.Data.DataSlice = append(previousDataSlice, msg.WaitingData.DataSlice...)
-			}
+			msg.AppendWaitingDataToDataSlice()
 		}
 	}
-	msg.WaitingData = nil
+	msg.SetWaitingData(nil)
 	BumpUpVersion(msg)
 	if delayInSec > 0 {
-		msg.Metadata.State = model.DELAYED_MSG_STATE
+		msg.SetMsgState(model.DELAYED_MSG_STATE)
 		delayedTimestamp := time.Now().Add(time.Duration(delayInSec) * time.Second)
-		msg.Metadata.DelayedTimestamp = &delayedTimestamp
+		msg.SetDelayedTimestamp(&delayedTimestamp)
 		qMsg := model.NewQMsg(msg)
 		tube.DelayedQueue.Enqueue(qMsg)
 	} else {
-		msg.Metadata.State = model.READY_MSG_STATE
-		msg.Metadata.DelayedTimestamp = nil
+		msg.SetMsgState(model.READY_MSG_STATE)
+		msg.SetDelayedTimestamp(nil)
 		qMsg := model.NewQMsg(msg)
 		tube.ReadyQueue.Enqueue(qMsg)
 	}

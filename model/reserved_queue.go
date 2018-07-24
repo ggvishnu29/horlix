@@ -1,5 +1,9 @@
 package model
 
+import (
+	"github.com/ggvishnu29/horlix/serde"
+)
+
 var reservedQEnqueueCount = 0
 
 type ReservedQueue struct {
@@ -7,8 +11,16 @@ type ReservedQueue struct {
 	TubeID string
 }
 
+func NewReservedQueue(tubeID string) *ReservedQueue {
+	return &ReservedQueue{
+		TubeID: tubeID,
+	}
+}
+
 func (r *ReservedQueue) Enqueue(qMsg *QMsg) {
 	r.QMsgs = append(r.QMsgs, qMsg)
+	opr := serde.NewOperation(RESERVED_QUEUE, ENQUEUE_OPR, &r.TubeID, qMsg)
+	LogOpr(opr)
 }
 
 func (r *ReservedQueue) Dequeue() *QMsg {
@@ -22,6 +34,8 @@ func (r *ReservedQueue) Dequeue() *QMsg {
 	} else {
 		r.QMsgs = r.QMsgs[1:]
 	}
+	opr := serde.NewOperation(RESERVED_QUEUE, DEQUEUE_OPR, &r.TubeID)
+	LogOpr(opr)
 	return qMsg
 }
 

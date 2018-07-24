@@ -12,6 +12,7 @@ import (
 
 	"github.com/ggvishnu29/horlix/logger"
 	"github.com/ggvishnu29/horlix/operation"
+	"github.com/ggvishnu29/horlix/serde"
 	"github.com/ggvishnu29/horlix/worker"
 )
 
@@ -26,18 +27,21 @@ var deleteCounter = 0
 
 func main() {
 	logger.InitAppLogger("/tmp")
+	logger.LogInfo("starting horlix")
+	logger.InitTransLogger("/tmp")
+	serde := &serde.JSONSerde{}
+	logWorker := worker.NewLogWorker(serde)
+	go logWorker.StartLogWorker()
 	go worker.StartTubesManager()
-	worker.InitSnapshotter("/tmp")
-	if err := worker.RecoverFromTransLog(); err != nil {
-		panic(err)
-	}
+	//worker.InitSnapshotter("/tmp")
+	//if err := worker.RecoverFromTransLog(); err != nil {
+	//	panic(err)
+	//}
 	//tube := model.TMap.GetTube("tube1")
 	//logger.LogInfof("readyQSize: %v reservedQSize: %v delayedQSize: %v\n", tube.ReadyQueue.Size(), tube.ReservedQueue.Size(), tube.DelayedQueue.Size())
 	//time.Sleep(10 * time.Second)
-	logger.LogInfo("starting horlix")
-	logger.InitTransLogger("/tmp")
 	// start http process here
-	go worker.StartSnapshotter()
+	//go worker.StartSnapshotter()
 	logger.LogInfo("started horlix")
 	go testHorlix()
 	signalCatcher()
@@ -204,8 +208,8 @@ func signalCatcher() {
 	select {
 	case <-sigs:
 		// taking snapshot before exiting
-		worker.TakeSnapshot()
-		logger.TruncateTransLog()
+		//worker.TakeSnapshot()
+		//logger.TruncateTransLog()
 	}
 	logger.LogInfo("exiting !!!!!!")
 	os.Exit(0)

@@ -1,13 +1,25 @@
 package model
 
+import (
+	"github.com/ggvishnu29/horlix/serde"
+)
+
 type ReadyQueue struct {
 	QMsgs  []*QMsg
 	TubeID string
 }
 
+func NewReadyQueue(tubeID string) *ReadyQueue {
+	return &ReadyQueue{
+		TubeID: tubeID,
+	}
+}
+
 func (r *ReadyQueue) Enqueue(qMsg *QMsg) {
 	//todo: sort queue based on priority
 	r.QMsgs = append(r.QMsgs, qMsg)
+	opr := serde.NewOperation(READY_QUEUE, ENQUEUE_OPR, &r.TubeID, qMsg)
+	LogOpr(opr)
 }
 
 func (r *ReadyQueue) Dequeue() *QMsg {
@@ -21,6 +33,8 @@ func (r *ReadyQueue) Dequeue() *QMsg {
 	} else {
 		r.QMsgs = r.QMsgs[1:]
 	}
+	opr := serde.NewOperation(READY_QUEUE, DEQUEUE_OPR, &r.TubeID)
+	LogOpr(opr)
 	return qMsg
 }
 
