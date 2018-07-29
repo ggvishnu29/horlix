@@ -8,6 +8,8 @@ import (
 
 var delayedQEnqueueCount = 0
 
+// DelayedQueue struct maintains the list of msgs that are in delayed
+// state for a specific tube
 type DelayedQueue struct {
 	QMsgs  []*QMsg
 	TubeID string
@@ -21,10 +23,11 @@ func NewDelayedQueue(tubeID string) *DelayedQueue {
 	return d
 }
 
-// this method can be called directly when restoring data from the snapshot
-// since we do not export the msgMap when taking snapshot
-func (d *DelayedQueue) Init() {
-	d.msgMap = GetTubeMap().GetTube(d.TubeID).MsgMap
+// Init method initializes the msgMap. We do not export the msgMap
+// when taking snapshot. so, this method will be called to initialize
+// the msgMap when restoring data from the snapshot.
+func (d *DelayedQueue) Init(tube *Tube) {
+	d.msgMap = tube.MsgMap
 }
 
 func (d *DelayedQueue) Enqueue(qMsg *QMsg) {

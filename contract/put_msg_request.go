@@ -5,7 +5,7 @@ import (
 )
 
 type PutMsgRequest struct {
-	TubeName   string
+	TubeID     string
 	MsgID      string
 	DataBytes  []byte
 	Priority   int

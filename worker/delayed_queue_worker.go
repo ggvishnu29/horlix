@@ -7,6 +7,10 @@ import (
 	"github.com/ggvishnu29/horlix/operation"
 )
 
+/*
+  DelayedQueueWorker is responsible for dequeueing the msgs (of a specific tube)
+  that are in DelayedQueue struct and processing them at regular interval
+*/
 func StartDelayedQueueWorker(tube *model.Tube) error {
 	for !tube.IsDeleted {
 		if err := processDelayedQMsg(tube); err != nil {

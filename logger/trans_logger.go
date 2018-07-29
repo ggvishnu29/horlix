@@ -2,6 +2,7 @@ package logger
 
 import (
 	"bufio"
+	"io"
 	"log"
 	"os"
 )
@@ -10,10 +11,12 @@ var transLog *os.File
 var tLogger *log.Logger
 var tWriter *bufio.Writer
 var tRecoveryFlag bool
+var transLogPath string
 
 func InitTransLogger(transLogDir string) error {
 	var err error
-	transLog, err = os.Create(transLogDir + "/transaction.log")
+	transLogPath = transLogDir + "/transaction.log"
+	transLog, err = os.Create(transLogPath)
 	if err != nil {
 		return err
 	}
@@ -27,6 +30,26 @@ func SetTransLogRecoveryFlag() {
 
 func UnSetTransLogRecoveryFlag() {
 	tRecoveryFlag = false
+}
+
+func CopyTransLogToFile(file string) error {
+	in, err := os.Open(transLogPath)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	out, err := os.Create(file)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, in)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func TruncateTransLog() {
@@ -45,22 +68,3 @@ func LogTransactions(logs [][]byte) error {
 	}
 	return nil
 }
-
-// func LogTransaction(opr string, req contract.IRequestContract) error {
-// 	if tRecoveryFlag {
-// 		// recovering data from trans log. so, not logging the transaction
-// 		return nil
-// 	}
-// 	reqBytes, err := req.Serialize()
-// 	if err != nil {
-// 		return err
-// 	}
-// 	reqString := string(reqBytes[:])
-// 	tWriter.WriteString(opr + "\n" + reqString + "\n")
-// 	if err := tWriter.Flush(); err != nil {
-// 		return err
-// 	}
-// 	// tLogger.Println(opr)
-// 	// tLogger.Println(bytes)
-// 	return nil
-// }

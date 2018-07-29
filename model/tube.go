@@ -9,6 +9,7 @@ const (
 	APPEND_DATA
 )
 
+// Tube struct encapsulates all information specific to a tube
 type Tube struct {
 	ID                  string
 	Lock                *Lock

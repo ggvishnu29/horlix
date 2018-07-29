@@ -4,6 +4,8 @@ import (
 	"github.com/ggvishnu29/horlix/serde"
 )
 
+// ReadyQueue struct maintains the list of msgs that are in ready
+// state for a specific tube
 type ReadyQueue struct {
 	QMsgs  []*QMsg
 	TubeID string

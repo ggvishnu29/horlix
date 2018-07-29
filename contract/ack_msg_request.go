@@ -3,7 +3,7 @@ package contract
 import "encoding/json"
 
 type AckMsgRequest struct {
-	TubeName  string
+	TubeID    string
 	MsgID     string
 	ReceiptID *string
 }

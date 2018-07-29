@@ -2,6 +2,7 @@ package model
 
 import "github.com/ggvishnu29/horlix/serde"
 
+// todo: the number of trans log that can be buffered should be made configurable
 var LogWorkerChan chan *serde.Operation = make(chan *serde.Operation, 100000)
 
 const DELAYED_QUEUE = "delayed_queue"

@@ -3,7 +3,7 @@ package contract
 import "encoding/json"
 
 type GetMsgRequest struct {
-	TubeName string
+	TubeID string
 }
 
 func (g *GetMsgRequest) Serialize() ([]byte, error) {

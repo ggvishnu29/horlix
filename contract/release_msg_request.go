@@ -3,7 +3,7 @@ package contract
 import "encoding/json"
 
 type ReleaseMsgRequest struct {
-	TubeName   string
+	TubeID     string
 	MsgID      string
 	ReceiptID  *string
 	DelayInSec int64

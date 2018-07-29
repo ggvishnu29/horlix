@@ -4,8 +4,9 @@ import (
 	"github.com/ggvishnu29/horlix/serde"
 )
 
+// MsgMap struct maintains the msg map specific to a tube
 type MsgMap struct {
-	Msgs   map[string]*Msg
+	Msgs   map[string]*Msg // maps msgID to Msg
 	TubeID string
 }
 

@@ -6,6 +6,8 @@ import (
 
 var reservedQEnqueueCount = 0
 
+// ReservedQueue struct maintains the list of msgs that are in reserved
+// state for a specific tube
 type ReservedQueue struct {
 	QMsgs  []*QMsg
 	TubeID string

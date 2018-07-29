@@ -3,8 +3,8 @@ package contract
 import "encoding/json"
 
 type DeleteMsgRequest struct {
-	TubeName string
-	MsgID    string
+	TubeID string
+	MsgID  string
 }
 
 func (d *DeleteMsgRequest) Serialize() ([]byte, error) {

@@ -24,7 +24,7 @@ func CreateTube(req *contract.CreateTubeRequest) error {
 	}
 	tube := model.NewTube(req.TubeName, req.ReserveTimeoutInSec, fuseSetting)
 	tubeMap.PutTube(tube)
-	tube.DelayedQueue.Init()
+	tube.DelayedQueue.Init(tube)
 	SpawnTubeWorkersChan <- tube
 	return nil
 }

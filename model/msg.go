@@ -167,7 +167,7 @@ func (m *Msg) SetDeleted(isDeleted bool) {
 }
 
 func (m *Msg) SetWaitingData(data *Data) {
-	m.Data = data
+	m.WaitingData = data
 	opr := serde.NewOperation(MSG, SET_WAITING_DATA_OPR, &m.ID, data)
 	LogOpr(opr)
 }

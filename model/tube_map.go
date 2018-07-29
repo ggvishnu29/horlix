@@ -6,9 +6,13 @@ import (
 
 var TMap = newTubeMap()
 
+/*
+  TubeMap struct maintains all tube information. This datastructure
+  captures all information that is ever persisted in memory by horlix.
+*/
 type TubeMap struct {
 	Lock  *Lock
-	Tubes map[string]*Tube
+	Tubes map[string]*Tube // maps tubeID to tube
 }
 
 func newTubeMap() *TubeMap {

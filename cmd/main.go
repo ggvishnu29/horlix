@@ -60,7 +60,7 @@ func testHorlix() {
 	go printStats()
 	for true {
 		req := &contract.GetMsgRequest{
-			TubeName: "tube1",
+			TubeID: "tube1",
 		}
 		msg, err := operation.GetMsg(req)
 		if err != nil {
@@ -76,7 +76,7 @@ func testHorlix() {
 		if releaseCounter == 10000 {
 			releaseCounter = 0
 			req := &contract.ReleaseMsgRequest{
-				TubeName:   model.TMap.Tubes[msg.TubeName].ID,
+				TubeID:     model.TMap.Tubes[msg.TubeName].ID,
 				MsgID:      msg.ID,
 				ReceiptID:  msg.ReceiptID,
 				DelayInSec: 5,
@@ -88,7 +88,7 @@ func testHorlix() {
 			numReleases++
 		} else {
 			req := &contract.AckMsgRequest{
-				TubeName:  model.TMap.Tubes[msg.TubeName].ID,
+				TubeID:    model.TMap.Tubes[msg.TubeName].ID,
 				MsgID:     msg.ID,
 				ReceiptID: msg.ReceiptID,
 			}
@@ -102,8 +102,8 @@ func testHorlix() {
 		if deleteCounter == 100000 {
 			deleteCounter = 0
 			req := &contract.DeleteMsgRequest{
-				TubeName: model.TMap.Tubes[msg.TubeName].ID,
-				MsgID:    msg.ID,
+				TubeID: model.TMap.Tubes[msg.TubeName].ID,
+				MsgID:  msg.ID,
 			}
 			err = operation.DeleteMsg(req)
 			if err != nil {
@@ -156,7 +156,7 @@ func enqueueMsgs() {
 		// 	numEnqueues++
 		// }
 		req := &contract.PutMsgRequest{
-			TubeName:   "tube1",
+			TubeID:     "tube1",
 			MsgID:      "msg1",
 			DataBytes:  []byte("hello"),
 			DelayInSec: 1,

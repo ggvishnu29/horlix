@@ -1,5 +1,9 @@
 package serde
 
+/*
+  ISerde interface is used for serializing datastructure operations that is
+  persisted in transaction logs
+*/
 type ISerde interface {
 	Serialize(*Operation) ([]byte, error)
 	Deserialize([]byte) (*Operation, error)

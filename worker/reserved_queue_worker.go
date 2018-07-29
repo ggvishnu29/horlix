@@ -7,6 +7,10 @@ import (
 	"github.com/ggvishnu29/horlix/operation"
 )
 
+/*
+  ReservedQueueWorker is responsible for dequeueing the msgs (of a specific tube)
+  that are in ReservedQueue struct and processing them at regular interval
+*/
 func StartReservedQueueWorker(tube *model.Tube) error {
 	for !tube.IsDeleted {
 		if err := processReservedQMsg(tube); err != nil {

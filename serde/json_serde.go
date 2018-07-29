@@ -2,6 +2,9 @@ package serde
 
 import "encoding/json"
 
+/*
+  JSONSerde implements ISerde interface
+*/
 type JSONSerde struct {
 }
 

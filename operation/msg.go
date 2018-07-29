@@ -17,7 +17,7 @@ const DeleteMsgOpr = "deletemsg"
 func PutMsg(req *contract.PutMsgRequest) error {
 	tubeMap := model.GetTubeMap()
 	tubeMap.Lock.Lock()
-	tube := tubeMap.GetTube(req.TubeName)
+	tube := tubeMap.GetTube(req.TubeID)
 	if tube == nil {
 		tubeMap.Lock.UnLock()
 		return fmt.Errorf("tube not found")
@@ -60,7 +60,7 @@ func PutMsg(req *contract.PutMsgRequest) error {
 func GetMsg(req *contract.GetMsgRequest) (*model.Msg, error) {
 	tubeMap := model.GetTubeMap()
 	tubeMap.Lock.Lock()
-	tube := tubeMap.GetTube(req.TubeName)
+	tube := tubeMap.GetTube(req.TubeID)
 	if tube == nil {
 		tubeMap.Lock.UnLock()
 		return nil, fmt.Errorf("tube not found")
@@ -97,7 +97,7 @@ func GetMsg(req *contract.GetMsgRequest) (*model.Msg, error) {
 func ReleaseMsg(req *contract.ReleaseMsgRequest) error {
 	tubeMap := model.GetTubeMap()
 	tubeMap.Lock.Lock()
-	tube := tubeMap.GetTube(req.TubeName)
+	tube := tubeMap.GetTube(req.TubeID)
 	if tube == nil {
 		tubeMap.Lock.UnLock()
 		return fmt.Errorf("tube not found")
@@ -122,7 +122,7 @@ func ReleaseMsg(req *contract.ReleaseMsgRequest) error {
 func AckMsg(req *contract.AckMsgRequest) error {
 	tubeMap := model.GetTubeMap()
 	tubeMap.Lock.Lock()
-	tube := tubeMap.GetTube(req.TubeName)
+	tube := tubeMap.GetTube(req.TubeID)
 	if tube == nil {
 		tubeMap.Lock.UnLock()
 		return fmt.Errorf("tube not found")
@@ -158,7 +158,7 @@ func AckMsg(req *contract.AckMsgRequest) error {
 func DeleteMsg(req *contract.DeleteMsgRequest) error {
 	tubeMap := model.GetTubeMap()
 	tubeMap.Lock.Lock()
-	tube := tubeMap.GetTube(req.TubeName)
+	tube := tubeMap.GetTube(req.TubeID)
 	if tube == nil {
 		tubeMap.Lock.UnLock()
 		return fmt.Errorf("tube not found")
