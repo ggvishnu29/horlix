@@ -24,7 +24,7 @@ func TestMain(m *testing.M) {
 	logger.InitAppLogger(dir)
 	logger.InitTransLogger(dir)
 	serde := &serde.JSONSerde{}
-	logWorker := worker.NewLogWorker(serde)
+	logWorker := worker.NewTransLogWorker(serde)
 	go logWorker.StartLogWorker()
 	go worker.StartTubesManager()
 	fmt.Println("initialized horlix")

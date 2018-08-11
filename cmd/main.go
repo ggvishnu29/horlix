@@ -30,18 +30,18 @@ func main() {
 	logger.LogInfo("starting horlix")
 	logger.InitTransLogger("/tmp")
 	serde := &serde.JSONSerde{}
-	logWorker := worker.NewLogWorker(serde)
-	go logWorker.StartLogWorker()
+	logWorker := worker.NewTransLogWorker(serde)
+	go logWorker.StartTransLogWorker()
+	worker.InitSnapshotRecovery("/tmp")
 	go worker.StartTubesManager()
-	//worker.InitSnapshotter("/tmp")
-	//if err := worker.RecoverFromTransLog(); err != nil {
-	//	panic(err)
-	//}
+	if err := worker.RecoverFromTransLog(); err != nil {
+		panic(err)
+	}
 	//tube := model.TMap.GetTube("tube1")
 	//logger.LogInfof("readyQSize: %v reservedQSize: %v delayedQSize: %v\n", tube.ReadyQueue.Size(), tube.ReservedQueue.Size(), tube.DelayedQueue.Size())
 	//time.Sleep(10 * time.Second)
 	// start http process here
-	//go worker.StartSnapshotter()
+	go worker.StartSnapshotter()
 	logger.LogInfo("started horlix")
 	go testHorlix()
 	signalCatcher()
@@ -208,8 +208,9 @@ func signalCatcher() {
 	select {
 	case <-sigs:
 		// taking snapshot before exiting
-		//worker.TakeSnapshot()
-		//logger.TruncateTransLog()
+		worker.SnapshotLock.Lock()
+		defer worker.SnapshotLock.UnLock()
+		worker.TakeSnapshot()
 	}
 	logger.LogInfo("exiting !!!!!!")
 	os.Exit(0)
