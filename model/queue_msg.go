@@ -17,3 +17,10 @@ func NewQMsg(msg *Msg) *QMsg {
 		Version: msg.Data.Version,
 	}
 }
+
+func (q *QMsg) Clone() *QMsg {
+	return &QMsg{
+		MsgID:   q.MsgID,
+		Version: q.Version,
+	}
+}

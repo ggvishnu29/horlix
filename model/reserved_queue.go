@@ -19,13 +19,15 @@ func NewReservedQueue(tubeID string) *ReservedQueue {
 	}
 }
 
-func (r *ReservedQueue) Enqueue(qMsg *QMsg) {
+func (r *ReservedQueue) Enqueue(qMsg *QMsg, shouldTransLog bool) {
 	r.QMsgs = append(r.QMsgs, qMsg)
-	opr := serde.NewOperation(RESERVED_QUEUE, ENQUEUE_OPR, &r.TubeID, qMsg)
-	LogOpr(opr)
+	if shouldTransLog {
+		opr := serde.NewOperation(RESERVED_QUEUE, ENQUEUE_OPR, &r.TubeID, qMsg.Clone())
+		LogOpr(opr)
+	}
 }
 
-func (r *ReservedQueue) Dequeue() *QMsg {
+func (r *ReservedQueue) Dequeue(shouldTransLog bool) *QMsg {
 	if len(r.QMsgs) == 0 {
 		return nil
 	}
@@ -36,8 +38,10 @@ func (r *ReservedQueue) Dequeue() *QMsg {
 	} else {
 		r.QMsgs = r.QMsgs[1:]
 	}
-	opr := serde.NewOperation(RESERVED_QUEUE, DEQUEUE_OPR, &r.TubeID)
-	LogOpr(opr)
+	if shouldTransLog {
+		opr := serde.NewOperation(RESERVED_QUEUE, DEQUEUE_OPR, &r.TubeID)
+		LogOpr(opr)
+	}
 	return qMsg
 }
 

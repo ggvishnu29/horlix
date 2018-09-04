@@ -30,18 +30,20 @@ func (d *DelayedQueue) Init(tube *Tube) {
 	d.msgMap = tube.MsgMap
 }
 
-func (d *DelayedQueue) Enqueue(qMsg *QMsg) {
+func (d *DelayedQueue) Enqueue(qMsg *QMsg, shouldTransLog bool) {
 	d.QMsgs = append(d.QMsgs, qMsg)
 	sort.Slice(d.QMsgs, func(i, j int) bool {
 		msg1 := d.msgMap.Get(d.QMsgs[i].MsgID)
 		msg2 := d.msgMap.Get(d.QMsgs[j].MsgID)
 		return msg1.Metadata.DelayedTimestamp.Before(*msg2.Metadata.DelayedTimestamp)
 	})
-	opr := serde.NewOperation(DELAYED_QUEUE, ENQUEUE_OPR, &d.TubeID, qMsg)
-	LogOpr(opr)
+	if shouldTransLog {
+		opr := serde.NewOperation(DELAYED_QUEUE, ENQUEUE_OPR, &d.TubeID, qMsg.Clone())
+		LogOpr(opr)
+	}
 }
 
-func (d *DelayedQueue) Dequeue() *QMsg {
+func (d *DelayedQueue) Dequeue(shouldTransLog bool) *QMsg {
 	if len(d.QMsgs) == 0 {
 		return nil
 	}
@@ -52,8 +54,10 @@ func (d *DelayedQueue) Dequeue() *QMsg {
 	} else {
 		d.QMsgs = d.QMsgs[1:]
 	}
-	opr := serde.NewOperation(DELAYED_QUEUE, DEQUEUE_OPR, &d.TubeID)
-	LogOpr(opr)
+	if shouldTransLog {
+		opr := serde.NewOperation(DELAYED_QUEUE, DEQUEUE_OPR, &d.TubeID)
+		LogOpr(opr)
+	}
 	return qMsg
 }
 

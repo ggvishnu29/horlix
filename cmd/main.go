@@ -37,12 +37,10 @@ func main() {
 	if err := worker.RecoverFromTransLog(); err != nil {
 		panic(err)
 	}
-	//tube := model.TMap.GetTube("tube1")
-	//logger.LogInfof("readyQSize: %v reservedQSize: %v delayedQSize: %v\n", tube.ReadyQueue.Size(), tube.ReservedQueue.Size(), tube.DelayedQueue.Size())
-	//time.Sleep(10 * time.Second)
-	// start http process here
 	go worker.StartSnapshotter()
 	logger.LogInfo("started horlix")
+	// start http process here
+	//rest.Init()
 	go testHorlix()
 	signalCatcher()
 }
