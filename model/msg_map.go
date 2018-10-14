@@ -18,16 +18,20 @@ func NewMsgMap(tubeID string) *MsgMap {
 	}
 }
 
-func (m *MsgMap) AddOrUpdate(msg *Msg) {
+func (m *MsgMap) AddOrUpdate(msg *Msg, shouldTransLog bool) {
 	m.Msgs[msg.ID] = msg
-	opr := serde.NewOperation(MSG_MAP, ADD_OR_UPDATE_OPR, &m.TubeID, msg)
-	LogOpr(opr)
+	if shouldTransLog {
+		opr := serde.NewOperation(MSG_MAP, ADD_OR_UPDATE_OPR, nil, m.TubeID, msg.Clone())
+		LogOpr(opr)
+	}
 }
 
-func (m *MsgMap) Delete(msgID string) {
+func (m *MsgMap) Delete(msgID string, shouldTransLog bool) {
 	m.Msgs[msgID] = nil
-	opr := serde.NewOperation(MSG_MAP, DELETE_OPR, &m.TubeID, msgID)
-	LogOpr(opr)
+	if shouldTransLog {
+		opr := serde.NewOperation(MSG_MAP, DELETE_OPR, nil, m.TubeID, msgID)
+		LogOpr(opr)
+	}
 }
 
 func (m *MsgMap) Get(msgID string) *Msg {

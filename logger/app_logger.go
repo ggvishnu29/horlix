@@ -11,7 +11,7 @@ var appLog *os.File
 
 func InitAppLogger(appLogDir string) error {
 	var err error
-	appLog, err = os.Create(appLogDir + "/horlix.log")
+	appLog, err = os.OpenFile(appLogDir+"/horlix.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		return err
 	}

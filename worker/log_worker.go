@@ -8,17 +8,17 @@ import (
 	"github.com/ggvishnu29/horlix/serde"
 )
 
-type LogWorker struct {
+type TransLogWorker struct {
 	serde serde.ISerde
 }
 
-func NewLogWorker(s serde.ISerde) *LogWorker {
-	return &LogWorker{
+func NewTransLogWorker(s serde.ISerde) *TransLogWorker {
+	return &TransLogWorker{
 		serde: s,
 	}
 }
 
-func (l *LogWorker) StartLogWorker() {
+func (l *TransLogWorker) StartTransLogWorker() {
 	var logLines [][]byte
 	timeout := time.After(1 * time.Second)
 	for {

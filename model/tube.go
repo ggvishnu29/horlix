@@ -36,10 +36,12 @@ func NewTube(ID string, reserveTimeoutInSec int64, fuseSetting *FuseSetting) *Tu
 	return t
 }
 
-func (t *Tube) SetDeleted(isDeleted bool) {
+func (t *Tube) SetDeleted(isDeleted bool, shouldTransLog bool) {
 	t.IsDeleted = isDeleted
-	opr := serde.NewOperation(TUBE, SET_TUBE_DELETED_OPR, &t.ID, isDeleted)
-	LogOpr(opr)
+	if shouldTransLog {
+		opr := serde.NewOperation(TUBE, SET_TUBE_DELETED_OPR, &t.ID, isDeleted)
+		LogOpr(opr)
+	}
 }
 
 type FuseSetting struct {
@@ -49,5 +51,11 @@ type FuseSetting struct {
 func NewFuseSetting(data int) *FuseSetting {
 	return &FuseSetting{
 		Data: data,
+	}
+}
+
+func (f *FuseSetting) Clone() *FuseSetting {
+	return &FuseSetting{
+		Data: f.Data,
 	}
 }

@@ -31,12 +31,12 @@ func processDelayedQMsg(tube *model.Tube) error {
 	msgMap := tube.MsgMap
 	msg := msgMap.Get(qMsg.MsgID)
 	if msg == nil || msg.Data == nil || msg.Data.Version != qMsg.Version || msg.IsDeleted || msg.Metadata.State != model.DELAYED_MSG_STATE {
-		tube.DelayedQueue.Dequeue()
+		tube.DelayedQueue.Dequeue(true)
 		tube.Lock.UnLock()
 		return nil
 	}
 	if time.Now().Sub(*msg.Metadata.DelayedTimestamp) >= 0 {
-		qMsg = tube.DelayedQueue.Dequeue()
+		qMsg = tube.DelayedQueue.Dequeue(true)
 		moveQMsgToReadyQ(tube, msg)
 		tube.Lock.UnLock()
 	} else {
@@ -48,8 +48,8 @@ func processDelayedQMsg(tube *model.Tube) error {
 
 func moveQMsgToReadyQ(tube *model.Tube, msg *model.Msg) {
 	operation.BumpUpVersion(msg)
-	msg.SetMsgState(model.READY_MSG_STATE)
-	msg.SetDelayedTimestamp(nil)
+	msg.SetMsgState(model.READY_MSG_STATE, true)
+	msg.SetDelayedTimestamp(nil, true)
 	qMsg := model.NewQMsg(msg)
-	tube.ReadyQueue.Enqueue(qMsg)
+	tube.ReadyQueue.Enqueue(qMsg, true)
 }

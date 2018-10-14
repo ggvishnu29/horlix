@@ -28,17 +28,17 @@ func PutMsg(req *contract.PutMsgRequest) error {
 	msg := tube.MsgMap.Get(req.MsgID)
 	if msg == nil {
 		msg = model.NewMsg(req.MsgID, [][]byte{req.DataBytes}, req.DelayInSec, req.Priority, tube)
-		tube.MsgMap.AddOrUpdate(msg)
+		tube.MsgMap.AddOrUpdate(msg, true)
 		if req.DelayInSec <= 0 {
-			msg.SetMsgState(model.READY_MSG_STATE)
+			msg.SetMsgState(model.READY_MSG_STATE, true)
 			qMsg := model.NewQMsg(msg)
-			tube.ReadyQueue.Enqueue(qMsg)
+			tube.ReadyQueue.Enqueue(qMsg, true)
 		} else {
-			msg.SetMsgState(model.DELAYED_MSG_STATE)
+			msg.SetMsgState(model.DELAYED_MSG_STATE, true)
 			delayedTimestamp := time.Now().Add(time.Duration(req.DelayInSec) * time.Second)
-			msg.SetDelayedTimestamp(&delayedTimestamp)
+			msg.SetDelayedTimestamp(&delayedTimestamp, true)
 			qMsg := model.NewQMsg(msg)
-			tube.DelayedQueue.Enqueue(qMsg)
+			tube.DelayedQueue.Enqueue(qMsg, true)
 		}
 		return nil
 	}
@@ -69,7 +69,7 @@ func GetMsg(req *contract.GetMsgRequest) (*model.Msg, error) {
 	tube.Lock.Lock()
 	defer tube.Lock.UnLock()
 	for true {
-		qMsg := tube.ReadyQueue.Dequeue()
+		qMsg := tube.ReadyQueue.Dequeue(true)
 		if qMsg == nil {
 			return nil, nil
 		}
@@ -78,17 +78,17 @@ func GetMsg(req *contract.GetMsgRequest) (*model.Msg, error) {
 		if msg == nil || msg.Data.Version != qMsg.Version || msg.Metadata.State != model.READY_MSG_STATE || msg.IsDeleted {
 			continue
 		}
-		msg.SetMsgState(model.RESERVED_MSG_STATE)
+		msg.SetMsgState(model.RESERVED_MSG_STATE, true)
 		BumpUpVersion(msg)
 		reserveTimeoutTimestamp := time.Now().Add(time.Duration(model.TMap.Tubes[msg.TubeName].ReserveTimeoutInSec) * time.Second)
-		msg.SetReservedTimestamp(&reserveTimeoutTimestamp)
+		msg.SetReservedTimestamp(&reserveTimeoutTimestamp, true)
 		receiptID, err := GenerateReceiptID()
 		if err != nil {
 			return nil, fmt.Errorf("error generating unique receipt ID: %v", err)
 		}
-		msg.SetReceiptID(&receiptID)
+		msg.SetReceiptID(&receiptID, true)
 		qMsg = model.NewQMsg(msg)
-		tube.ReservedQueue.Enqueue(qMsg)
+		tube.ReservedQueue.Enqueue(qMsg, true)
 		return msg, nil
 	}
 	return nil, nil
@@ -136,21 +136,21 @@ func AckMsg(req *contract.AckMsgRequest) error {
 	}
 	BumpUpVersion(msg)
 	if msg.WaitingData == nil {
-		msg.SetDeleted(true)
-		tube.MsgMap.Delete(msg.ID)
+		msg.SetDeleted(true, true)
+		tube.MsgMap.Delete(msg.ID, true)
 		return nil
 	}
-	msg.MoveWaitingDataToData()
-	msg.SetWaitingData(nil)
+	msg.MoveWaitingDataToData(true)
+	msg.SetWaitingData(nil, true)
 	if msg.Metadata.DelayedTimestamp != nil && msg.Metadata.DelayedTimestamp.Sub(time.Now()) > 0 {
-		msg.SetMsgState(model.DELAYED_MSG_STATE)
+		msg.SetMsgState(model.DELAYED_MSG_STATE, true)
 		qMsg := model.NewQMsg(msg)
-		tube.DelayedQueue.Enqueue(qMsg)
+		tube.DelayedQueue.Enqueue(qMsg, true)
 	} else {
-		msg.SetMsgState(model.READY_MSG_STATE)
-		msg.SetDelayedTimestamp(nil)
+		msg.SetMsgState(model.READY_MSG_STATE, true)
+		msg.SetDelayedTimestamp(nil, true)
 		qMsg := model.NewQMsg(msg)
-		tube.ReadyQueue.Enqueue(qMsg)
+		tube.ReadyQueue.Enqueue(qMsg, true)
 	}
 	return nil
 }
@@ -170,7 +170,7 @@ func DeleteMsg(req *contract.DeleteMsgRequest) error {
 	if msg == nil {
 		return fmt.Errorf("no msg in the tube with the id")
 	}
-	msg.SetDeleted(true)
-	tube.MsgMap.Delete(msg.ID)
+	msg.SetDeleted(true, true)
+	tube.MsgMap.Delete(msg.ID, true)
 	return nil
 }

@@ -30,19 +30,17 @@ func main() {
 	logger.LogInfo("starting horlix")
 	logger.InitTransLogger("/tmp")
 	serde := &serde.JSONSerde{}
-	logWorker := worker.NewLogWorker(serde)
-	go logWorker.StartLogWorker()
+	logWorker := worker.NewTransLogWorker(serde)
+	go logWorker.StartTransLogWorker()
+	worker.InitSnapshotRecovery("/tmp")
 	go worker.StartTubesManager()
-	//worker.InitSnapshotter("/tmp")
-	//if err := worker.RecoverFromTransLog(); err != nil {
-	//	panic(err)
-	//}
-	//tube := model.TMap.GetTube("tube1")
-	//logger.LogInfof("readyQSize: %v reservedQSize: %v delayedQSize: %v\n", tube.ReadyQueue.Size(), tube.ReservedQueue.Size(), tube.DelayedQueue.Size())
-	//time.Sleep(10 * time.Second)
-	// start http process here
-	//go worker.StartSnapshotter()
+	if err := worker.RecoverFromTransLog(); err != nil {
+		panic(err)
+	}
+	go worker.StartSnapshotter()
 	logger.LogInfo("started horlix")
+	// start http process here
+	//rest.Init()
 	go testHorlix()
 	signalCatcher()
 }
@@ -57,8 +55,9 @@ func testHorlix() {
 		//panic(err)
 	}
 	go enqueueMsgs()
-	go printStats()
+	//go printStats()
 	for true {
+		time.Sleep(1 * time.Second)
 		req := &contract.GetMsgRequest{
 			TubeID: "tube1",
 		}
@@ -66,14 +65,15 @@ func testHorlix() {
 		if err != nil {
 			panic(err)
 		}
-		numDequeues++
 		if msg == nil {
+			logger.LogInfo("no msg dequeued")
 			continue
 		}
-		//logger.LogInfof("%v\n", msg.Data.DataSlice)
+		time.Sleep(5 * time.Second)
+		numDequeues++
 		releaseCounter++
 		deleteCounter++
-		if releaseCounter == 10000 {
+		if releaseCounter == 10 {
 			releaseCounter = 0
 			req := &contract.ReleaseMsgRequest{
 				TubeID:     model.TMap.Tubes[msg.TubeName].ID,
@@ -92,14 +92,14 @@ func testHorlix() {
 				MsgID:     msg.ID,
 				ReceiptID: msg.ReceiptID,
 			}
+			logger.LogInfo("acked the msg")
 			err = operation.AckMsg(req)
 			if err != nil {
 				panic(err)
 			}
 			numAcks++
-
 		}
-		if deleteCounter == 100000 {
+		if deleteCounter == 20 {
 			deleteCounter = 0
 			req := &contract.DeleteMsgRequest{
 				TubeID: model.TMap.Tubes[msg.TubeName].ID,
@@ -111,13 +111,6 @@ func testHorlix() {
 			}
 			numDeletes++
 		}
-		//logger.LogInfof("dequeued %v, msg slice size: %v\n", msg.ID, len(msg.Data.DataSlice))
-		//b, _ := json.Marshal(msg)
-		//logger.LogInfof("msg: %v\n", string(b))
-		//err = operation.ReleaseMsg(msg.Tube.ID, msg.ID, msg.ReceiptID, 10)
-		//err = operation.AckMsg(msg.Tube.ID, msg.ID, msg.ReceiptID)
-		//err = operation.DeleteMsg(msg.Tube.ID, msg.ID)
-		//time.Sleep(10 * time.Millisecond)
 	}
 }
 
@@ -137,53 +130,24 @@ func printStats() {
 		tube := model.GetTubeMap().GetTube("tube1")
 		logger.LogInfof("enqueue rate: %v dequeue rate: %v delete rate: %v ack rate: %v release rate: %v\n", enqueueRate, dequeueRate, deleteRate, ackRate, releaseRate)
 		logger.LogInfof("readyQSize: %v reservedQSize: %v delayedQSize: %v\n", tube.ReadyQueue.Size(), tube.ReservedQueue.Size(), tube.DelayedQueue.Size())
-		//logger.LogInfo("Delayed Queue:")
-		//tube.DelayedQueue.Print()
 	}
 }
 
 func enqueueMsgs() {
 	for true {
-		//i := 1
-		// for i <= 1000 {
-		// 	msgID := "msg" + strconv.Itoa(i)
-		// 	err := operation.PutMsg("tube1", msgID, []byte("hello"), 1, int64(i%10))
-		// 	if err != nil {
-		// 		panic(err)
-		// 	}
-		// 	time.Sleep(1 * time.Second)
-		// 	i++
-		// 	numEnqueues++
-		// }
 		req := &contract.PutMsgRequest{
 			TubeID:     "tube1",
 			MsgID:      "msg1",
-			DataBytes:  []byte("hello"),
-			DelayInSec: 1,
+			DataBytes:  []byte("hello world"),
+			DelayInSec: 0,
 			Priority:   0,
 		}
 		err := operation.PutMsg(req)
 		if err != nil {
 			panic(err)
 		}
+		time.Sleep(10 * time.Millisecond)
 		numEnqueues++
-		//time.Sleep(1 * time.Second)
-		// err = operation.PutMsg("tube1", "msg2", []byte("world"), 1, 2)
-		// if err != nil {
-		// 	panic(err)
-		// }
-		// numEnqueues++
-		// err = operation.PutMsg("tube1", "msg1", []byte("world"), 1, 10)
-		// if err != nil {
-		// 	panic(err)
-		// }
-		// numEnqueues++
-
-		//time.Sleep(3 * time.Second)
-		// if numEnqueues > 10000000 {
-		// 	logger.LogInfo("stop enqueueing.......")
-		// 	break
-		// }
 	}
 }
 
@@ -208,8 +172,12 @@ func signalCatcher() {
 	select {
 	case <-sigs:
 		// taking snapshot before exiting
-		//worker.TakeSnapshot()
-		//logger.TruncateTransLog()
+		logger.LogInfo("received kill signel. acquiring snapshot lock to take snapshot")
+		worker.SnapshotLock.Lock()
+		defer worker.SnapshotLock.UnLock()
+		logger.LogInfo("taking final snapshot")
+		worker.TakeSnapshot()
+		logger.LogInfo("taken final snapshot. exiting")
 	}
 	logger.LogInfo("exiting !!!!!!")
 	os.Exit(0)

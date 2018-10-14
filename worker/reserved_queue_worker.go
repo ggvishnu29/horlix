@@ -31,12 +31,12 @@ func processReservedQMsg(tube *model.Tube) error {
 	msgMap := tube.MsgMap
 	msg := msgMap.Get(qMsg.MsgID)
 	if msg == nil || msg.Data == nil || msg.Data.Version != qMsg.Version || msg.IsDeleted || msg.Metadata.State != model.RESERVED_MSG_STATE {
-		tube.ReservedQueue.Dequeue()
+		tube.ReservedQueue.Dequeue(true)
 		tube.Lock.UnLock()
 		return nil
 	}
 	if time.Now().Sub(*msg.Metadata.ReservedTimestamp) >= 0 {
-		qMsg = tube.ReservedQueue.Dequeue()
+		qMsg = tube.ReservedQueue.Dequeue(true)
 		fuseReservedQMsg(tube, msg)
 		tube.Lock.UnLock()
 	} else {

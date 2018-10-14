@@ -23,10 +23,26 @@ func CreateTube(req *contract.CreateTubeRequest) error {
 		Data: req.DataFuseSetting,
 	}
 	tube := model.NewTube(req.TubeName, req.ReserveTimeoutInSec, fuseSetting)
-	tubeMap.PutTube(tube)
+	tubeMap.PutTube(tube, true)
 	tube.DelayedQueue.Init(tube)
 	SpawnTubeWorkersChan <- tube
 	return nil
+}
+
+func GetTube(req *contract.GetTubeRequest) (*contract.GetTubeResponse, error) {
+	tubeMap := model.GetTubeMap()
+	tubeMap.Lock.Lock()
+	defer tubeMap.Lock.UnLock()
+	tube := tubeMap.GetTube(req.TubeID)
+	if tube == nil {
+		return nil, nil
+	}
+	resp := &contract.GetTubeResponse{
+		TubeID:              tube.ID,
+		ReserveTimeoutInSec: tube.ReserveTimeoutInSec,
+		DataFuseSetting:     tube.FuseSetting.Data,
+	}
+	return resp, nil
 }
 
 func DeleteTube(req *contract.DeleteTubeRequest) error {
@@ -37,7 +53,7 @@ func DeleteTube(req *contract.DeleteTubeRequest) error {
 	if tube == nil {
 		return fmt.Errorf("tube not found")
 	}
-	tube.SetDeleted(true)
-	tubeMap.DeleteTube(tube.ID)
+	tube.SetDeleted(true, true)
+	tubeMap.DeleteTube(tube.ID, true)
 	return nil
 }

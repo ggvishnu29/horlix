@@ -17,29 +17,11 @@ const (
 const defaultPriority int = 5
 const defaultReserveTimeoutInSec = 10
 
-// Msg struct defines the structure of the msg that is enqueued/dequeued
-type Msg struct {
-	ID          string
-	TubeName    string
-	Data        *Data
-	Metadata    *MsgMetaData
-	WaitingData *Data
-	ReceiptID   *string
-	IsDeleted   bool
-}
-
 type Data struct {
 	DelayInSec int64
 	Priority   int
 	Version    int64
 	DataSlice  [][]byte
-}
-
-type MsgMetaData struct {
-	State                  MsgState
-	ReservedTimestamp      *time.Time
-	DelayedTimestamp       *time.Time
-	FirstEnqueuedTimestamp *time.Time
 }
 
 func NewData(dataSlice [][]byte, priority int, delayInSec int64) *Data {
@@ -49,6 +31,45 @@ func NewData(dataSlice [][]byte, priority int, delayInSec int64) *Data {
 		Version:    time.Now().Unix(),
 		DataSlice:  dataSlice,
 	}
+}
+
+func (d *Data) Clone() *Data {
+	if d == nil {
+		return nil
+	}
+	return &Data{
+		DelayInSec: d.DelayInSec,
+		Priority:   d.Priority,
+		Version:    d.Version,
+		DataSlice:  CloneDataSlice(d.DataSlice),
+	}
+}
+
+type MsgMetaData struct {
+	State                  MsgState
+	ReservedTimestamp      *time.Time
+	DelayedTimestamp       *time.Time
+	FirstEnqueuedTimestamp *time.Time
+}
+
+func (m *MsgMetaData) Clone() *MsgMetaData {
+	return &MsgMetaData{
+		State:                  m.State,
+		ReservedTimestamp:      m.ReservedTimestamp,
+		DelayedTimestamp:       m.DelayedTimestamp,
+		FirstEnqueuedTimestamp: m.FirstEnqueuedTimestamp,
+	}
+}
+
+// Msg struct defines the structure of the msg that is enqueued/dequeued
+type Msg struct {
+	ID          string
+	TubeName    string
+	Data        *Data
+	Metadata    *MsgMetaData
+	WaitingData *Data
+	ReceiptID   *string
+	IsDeleted   bool
 }
 
 func NewMsg(id string, dataSlice [][]byte, delayInSec int64, priority int, tube *Tube) *Msg {
@@ -82,92 +103,146 @@ func NewMsg(id string, dataSlice [][]byte, delayInSec int64, priority int, tube 
 	return msg
 }
 
-func (m *Msg) SetMsgState(msgState MsgState) {
+func (m *Msg) Clone() *Msg {
+	var data *Data
+	var waitingData *Data
+	var metadata *MsgMetaData
+	if m.Data != nil {
+		data = m.Data.Clone()
+	}
+	if m.WaitingData != nil {
+		waitingData = m.WaitingData.Clone()
+	}
+	if m.Metadata != nil {
+		metadata = m.Metadata.Clone()
+	}
+	return &Msg{
+		ID:          m.ID,
+		TubeName:    m.TubeName,
+		Data:        data,
+		Metadata:    metadata,
+		WaitingData: waitingData,
+		ReceiptID:   m.ReceiptID,
+		IsDeleted:   m.IsDeleted,
+	}
+}
+
+func (m *Msg) SetMsgState(msgState MsgState, shouldTransLog bool) {
 	m.Metadata.State = msgState
-	opr := serde.NewOperation(MSG, SET_MSG_STATE_OPR, &m.ID, msgState)
-	LogOpr(opr)
+	if shouldTransLog {
+		opr := serde.NewOperation(MSG, SET_MSG_STATE_OPR, &m.ID, msgState, m.TubeName)
+		LogOpr(opr)
+	}
 }
 
-func (m *Msg) SetReservedTimestamp(time *time.Time) {
+func (m *Msg) SetReservedTimestamp(time *time.Time, shouldTransLog bool) {
 	m.Metadata.ReservedTimestamp = time
-	opr := serde.NewOperation(MSG, SET_RESERVED_TIMESTAMP_OPR, &m.ID, time)
-	LogOpr(opr)
+	if shouldTransLog {
+		opr := serde.NewOperation(MSG, SET_RESERVED_TIMESTAMP_OPR, &m.ID, time, m.TubeName)
+		LogOpr(opr)
+	}
 }
 
-func (m *Msg) SetDelayedTimestamp(time *time.Time) {
+func (m *Msg) SetDelayedTimestamp(time *time.Time, shouldTransLog bool) {
 	m.Metadata.DelayedTimestamp = time
-	opr := serde.NewOperation(MSG, SET_DELAYED_TIMESTAMP_OPR, &m.ID, time)
-	LogOpr(opr)
+	if shouldTransLog {
+		opr := serde.NewOperation(MSG, SET_DELAYED_TIMESTAMP_OPR, &m.ID, time, m.TubeName)
+		LogOpr(opr)
+	}
 }
 
-func (m *Msg) SetFirstEnqueuedTimestamp(time *time.Time) {
+func (m *Msg) SetFirstEnqueuedTimestamp(time *time.Time, shouldTransLog bool) {
 	m.Metadata.FirstEnqueuedTimestamp = time
-	opr := serde.NewOperation(MSG, SET_FIRST_ENQUEUED_TIMESTAMP_OPR, &m.ID, time)
-	LogOpr(opr)
+	if shouldTransLog {
+		opr := serde.NewOperation(MSG, SET_FIRST_ENQUEUED_TIMESTAMP_OPR, &m.ID, time, m.TubeName)
+		LogOpr(opr)
+	}
 }
 
-func (m *Msg) SetReceiptID(receiptID *string) {
+func (m *Msg) SetReceiptID(receiptID *string, shouldTransLog bool) {
 	m.ReceiptID = receiptID
-	opr := serde.NewOperation(MSG, SET_RECEIPT_ID_OPR, &m.ID, receiptID)
-	LogOpr(opr)
+	if shouldTransLog {
+		opr := serde.NewOperation(MSG, SET_RECEIPT_ID_OPR, &m.ID, receiptID, m.TubeName)
+		LogOpr(opr)
+	}
 }
 
-func (m *Msg) SetData(data *Data) {
+func (m *Msg) SetData(data *Data, shouldTransLog bool) {
 	m.Data = data
-	opr := serde.NewOperation(MSG, SET_DATA_OPR, &m.ID, data)
-	LogOpr(opr)
+	if shouldTransLog {
+		opr := serde.NewOperation(MSG, SET_DATA_OPR, &m.ID, data.Clone(), m.TubeName)
+		LogOpr(opr)
+	}
 }
 
-func (m *Msg) SetDataSlice(dataSlice [][]byte) {
+func (m *Msg) SetDataSlice(dataSlice [][]byte, shouldTransLog bool) {
 	m.Data.DataSlice = dataSlice
-	opr := serde.NewOperation(MSG, SET_DATA_SLICE_OPR, &m.ID, dataSlice)
-	LogOpr(opr)
+	if shouldTransLog {
+		opr := serde.NewOperation(MSG, SET_DATA_SLICE_OPR, &m.ID, CloneDataSlice(dataSlice), m.TubeName)
+		LogOpr(opr)
+	}
 }
 
-func (m *Msg) SetWaitingDataSlice(dataSlice [][]byte) {
+func (m *Msg) SetWaitingDataSlice(dataSlice [][]byte, shouldTransLog bool) {
 	m.WaitingData.DataSlice = dataSlice
-	opr := serde.NewOperation(MSG, SET_WAITING_DATA_SLICE_OPR, &m.ID, dataSlice)
-	LogOpr(opr)
+	if shouldTransLog {
+		opr := serde.NewOperation(MSG, SET_WAITING_DATA_SLICE_OPR, &m.ID, CloneDataSlice(dataSlice), m.TubeName)
+		LogOpr(opr)
+	}
 }
 
-func (m *Msg) AppendWaitingDataToDataSlice() {
+func (m *Msg) AppendWaitingDataToDataSlice(shouldTransLog bool) {
 	m.Data.DataSlice = append(m.Data.DataSlice, m.WaitingData.DataSlice...)
-	opr := serde.NewOperation(MSG, APPEND_WAITING_DATA_TO_DATA_SLICE_OPR, &m.ID)
-	LogOpr(opr)
+	if shouldTransLog {
+		opr := serde.NewOperation(MSG, APPEND_WAITING_DATA_TO_DATA_SLICE_OPR, &m.ID, m.TubeName)
+		LogOpr(opr)
+	}
 }
 
-func (m *Msg) ReplaceDataWithWaitingDataSlice() {
+func (m *Msg) ReplaceDataWithWaitingDataSlice(shouldTransLog bool) {
 	m.Data.DataSlice = m.WaitingData.DataSlice
-	opr := serde.NewOperation(MSG, REPLACE_DATA_WITH_WAITING_DATA_SLICE_OPR, &m.ID)
-	LogOpr(opr)
+	if shouldTransLog {
+		opr := serde.NewOperation(MSG, REPLACE_DATA_WITH_WAITING_DATA_SLICE_OPR, &m.ID, m.TubeName)
+		LogOpr(opr)
+	}
 }
 
-func (m *Msg) AppendDataSlice(dataSlice [][]byte) {
+func (m *Msg) AppendDataSlice(dataSlice [][]byte, shouldTransLog bool) {
 	m.Data.DataSlice = append(m.Data.DataSlice, dataSlice...)
-	opr := serde.NewOperation(MSG, APPEND_DATA_SLICE_OPR, &m.ID, dataSlice)
-	LogOpr(opr)
+	if shouldTransLog {
+		opr := serde.NewOperation(MSG, APPEND_DATA_SLICE_OPR, &m.ID, CloneDataSlice(dataSlice), m.TubeName)
+		LogOpr(opr)
+	}
 }
 
-func (m *Msg) AppendWaitingDataSlice(dataSlice [][]byte) {
+func (m *Msg) AppendWaitingDataSlice(dataSlice [][]byte, shouldTransLog bool) {
 	m.WaitingData.DataSlice = append(m.WaitingData.DataSlice, dataSlice...)
-	opr := serde.NewOperation(MSG, APPEND_WAITING_DATA_SLICE_OPR, &m.ID, dataSlice)
-	LogOpr(opr)
+	if shouldTransLog {
+		opr := serde.NewOperation(MSG, APPEND_WAITING_DATA_SLICE_OPR, &m.ID, CloneDataSlice(dataSlice), m.TubeName)
+		LogOpr(opr)
+	}
 }
 
-func (m *Msg) MoveWaitingDataToData() {
+func (m *Msg) MoveWaitingDataToData(shouldTransLog bool) {
 	m.Data = m.WaitingData
-	opr := serde.NewOperation(MSG, MOVE_WAITING_DATA_TO_DATA, &m.ID)
-	LogOpr(opr)
+	if shouldTransLog {
+		opr := serde.NewOperation(MSG, MOVE_WAITING_DATA_TO_DATA, &m.ID, m.TubeName)
+		LogOpr(opr)
+	}
 }
 
-func (m *Msg) SetDeleted(isDeleted bool) {
+func (m *Msg) SetDeleted(isDeleted bool, shouldTransLog bool) {
 	m.IsDeleted = isDeleted
-	opr := serde.NewOperation(MSG, SET_MSG_DELETED_OPR, &m.ID, isDeleted)
-	LogOpr(opr)
+	if shouldTransLog {
+		opr := serde.NewOperation(MSG, SET_MSG_DELETED_OPR, &m.ID, isDeleted, m.TubeName)
+		LogOpr(opr)
+	}
 }
 
-func (m *Msg) SetWaitingData(data *Data) {
+func (m *Msg) SetWaitingData(data *Data, shouldTransLog bool) {
 	m.WaitingData = data
-	opr := serde.NewOperation(MSG, SET_WAITING_DATA_OPR, &m.ID, data)
-	LogOpr(opr)
+	if shouldTransLog {
+		opr := serde.NewOperation(MSG, SET_WAITING_DATA_OPR, &m.ID, data.Clone(), m.TubeName)
+		LogOpr(opr)
+	}
 }
