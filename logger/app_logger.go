@@ -33,5 +33,5 @@ func LogFatal(msg string) {
 }
 
 func LogFatalf(format string, v ...interface{}) {
-	aLogger.Fatalf(format, v)
+	aLogger.Fatalf(format, v...)
 }
